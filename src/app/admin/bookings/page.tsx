@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
@@ -19,8 +19,9 @@ import { Loader2 } from 'lucide-react';
 export default function AdminBookingsPage() {
   const firestore = useFirestore();
 
+  // Query top-level bookings collection
   const bookingsQuery = useMemoFirebase(() => 
-    firestore ? query(collectionGroup(firestore, `bookings`), orderBy('startTime', 'desc')) : null, 
+    firestore ? query(collection(firestore, `bookings`), orderBy('startTime', 'desc')) : null, 
     [firestore]
   );
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);

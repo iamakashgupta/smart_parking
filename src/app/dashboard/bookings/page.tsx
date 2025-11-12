@@ -7,12 +7,11 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  TableCaption,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format } from 'date-fns';
@@ -24,13 +23,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MyBookingsPage() {
-  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const bookingsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, `users/${user.uid}/bookings`), orderBy('startTime', 'desc')) : null, [firestore, user]);
+  // Since auth is removed, we query the top-level 'bookings' collection
+  const bookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `bookings`), orderBy('startTime', 'desc')) : null, [firestore]);
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
 
   const getStatusVariant = (status: string) => {
@@ -49,7 +47,7 @@ export default function MyBookingsPage() {
   };
 
   const renderContent = () => {
-    if (isUserLoading || isLoadingBookings) {
+    if (isLoadingBookings) {
       return (
         <TableRow>
           <TableCell colSpan={5} className="h-24 text-center">
@@ -57,16 +55,6 @@ export default function MyBookingsPage() {
           </TableCell>
         </TableRow>
       );
-    }
-
-    if (!user) {
-        return (
-             <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    Please log in to see your bookings.
-                </TableCell>
-            </TableRow>
-        );
     }
     
     if (bookings && bookings.length > 0) {
@@ -111,7 +99,7 @@ export default function MyBookingsPage() {
     return (
         <TableRow>
             <TableCell colSpan={5} className="text-center text-muted-foreground">
-                You have no bookings yet.
+                No bookings found in the system.
             </TableCell>
         </TableRow>
     );
@@ -121,8 +109,8 @@ export default function MyBookingsPage() {
   return (
     <div className="container mx-auto px-0">
       <PageHeader
-        title="My Bookings"
-        description="View your active, upcoming, and past bookings."
+        title="All Bookings"
+        description="View all active, upcoming, and past bookings in the system."
       />
       <Card>
         <CardHeader>

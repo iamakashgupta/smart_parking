@@ -1,98 +1,16 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a strict user-ownership model for personal data,
- *              allows public read access to parking lot and slot information,
- *              and restricts administrative data to authorized users.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profiles. Only the user can read/write their own profile.
- * - /users/{userId}/vehicles/{vehicleId}: Stores user's vehicles. Only the user can read/write.
- * - /users/{userId}/bookings/{bookingId}: Stores user's bookings. Only the user can read/write. Admins can list.
- * - /parking_lots/{parkingLotId}: Stores parking lot information. Publicly readable.
- * - /parking_lots/{parkingLotId}/slots/{slotId}: Stores slot information. Publicly readable.
- * - /receipts/{receiptId}: Stores receipts. Only accessible to the user who made the booking.
- * - /transactions/{transactionId}: Stores transaction details. Only accessible to admins.
- * - /pricing/{pricingId}: Stores pricing rules. Only accessible to admins.
- * - /logs/{logId}: Stores log entries. Only accessible to admins.
- *
- * Key Security Decisions:
- * - User data is strictly controlled by user-ownership enforced via path-based rules.
- * - Parking lot and slot data is publicly readable to facilitate real-time updates.
- * - Listing of parking lots and slots is allowed, as this data is considered public.
- * - A basic admin role is simulated by allowing any authenticated user to create/update lots and list all bookings.
+ * @description DEVELOPMENT-ONLY ruleset. This is completely insecure and allows
+ *              all reads and writes. It is intended only for the initial
+ *              prototyping phase to prevent permission errors.
+ *              DO NOT USE IN PRODUCTION.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper Functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Enforces user-ownership for user profiles.
-     * @path /users/{userId}
-     */
-    match /users/{userId} {
-      function isOwner() {
-        return request.auth.uid == userId;
-      }
-
-      allow get, update, delete: if isOwner();
-      allow list: if false; // User listing is not permitted.
-      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
-    }
-
-    /**
-     * @description Enforces ownership for bookings, but allows admins to list all.
-     * @path /users/{userId}/bookings/{bookingId}
-     */
-    match /users/{userId}/bookings/{bookingId} {
-      function isOwner() {
-        return request.auth.uid == userId;
-      }
-      
-      // Allow user to manage their own bookings
-      allow get, write: if isOwner();
-    }
-
-    // Collection group query for admins to list all bookings across all users.
-    match /{path=**}/bookings/{bookingId} {
-      allow list: if isSignedIn();
-    }
-
-    /**
-     * @description Allows public read/write access to parking lot information.
-     * @path /parking_lots/{parkingLotId}
-     */
-    match /parking_lots/{parkingLotId} {
+    // Allow all reads and writes to all collections.
+    match /{document=**} {
       allow read, write: if true;
-    }
-
-    /**
-     * @description Allows public read/write access to slot information.
-     * @path /parking_lots/{parkingLotId}/slots/{slotId}
-     */
-    match /parking_lots/{parkingLotId}/slots/{slotId} {
-      allow read, write: if true;
-    }
-
-    /**
-     * @description Admin-only collections.
-     * @paths /receipts, /transactions, /pricing, /logs
-     */
-    match /receipts/{receiptId} {
-       allow read, write: if false; // Not implemented
-    }
-    match /transactions/{transactionId} {
-      allow read, write: if false; // Not implemented
-    }
-    match /pricing/{pricingId} {
-      allow read, write: if false; // Not implemented
-    }
-    match /logs/{logId} {
-      allow read, write: if false; // Not implemented
     }
   }
 }

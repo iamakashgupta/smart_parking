@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar as CalendarIcon, Clock, Car } from 'lucide-react';
 import { format, addHours, differenceInHours } from 'date-fns';
-import { Timestamp, addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, doc, updateDoc, setDoc } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -23,29 +23,40 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import type { ParkingLot, Vehicle, User } from '@/lib/types';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import Link from 'next/link';
 
 interface BookingFormProps {
   lot: ParkingLot & { slots: any[] };
   onBookingSuccess: (bookingId: string) => void;
 }
 
+// Hardcoded user for anonymous booking
+const anonymousUserId = 'anonymousUser';
+const anonymousUser: User = {
+    id: anonymousUserId,
+    name: "Guest User",
+    email: "guest@example.com",
+    vehicles: [
+        { id: 'v_default_1', make: 'Maruti', model: 'Swift', registrationNumber: 'DL01AB1234', type: 'Regular' },
+        { id: 'v_default_2', make: 'Hyundai', model: 'Creta', registrationNumber: 'MH02CD5678', type: 'Regular' },
+        { id: 'v_default_3', make: 'Tata', model: 'Nexon EV', registrationNumber: 'KA03EV9101', type: 'EV' },
+    ]
+};
+
+
 export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
-  const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
-  const { data: userData } = useDoc<User>(userDocRef);
-  const vehicles = userData?.vehicles ?? [];
+  // We'll manage the user data in component state now
+  const [vehicles, setVehicles] = useState(anonymousUser.vehicles || []);
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState<string>('09:00 AM');
   const [endTime, setEndTime] = useState<string>('11:00 AM');
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>(undefined);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>(vehicles[0]?.id);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const timeSlots = Array.from({ length: 48 }, (_, i) => {
@@ -67,7 +78,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   }, [date, startTime, endTime, lot.rates.perHour]);
 
   const handleCreateBooking = async (isReservation: boolean) => {
-    if (!user || !date || !selectedVehicleId || !firestore) {
+    if (!date || !selectedVehicleId || !firestore) {
         toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a vehicle, date, and time.' });
         return;
     }
@@ -88,13 +99,12 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
         return;
     }
 
-
     try {
         const start = new Date();
         const end = addHours(start, 2); // Dummy 2 hour booking for "Book Now"
 
         const bookingData = {
-            userId: user.uid,
+            userId: anonymousUserId,
             lotId: lot.id,
             lotName: lot.name,
             slotId: availableSlot.id,
@@ -105,7 +115,8 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
             totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2, // Dummy cost for now
         };
         
-        const bookingsCollection = collection(firestore, `users/${user.uid}/bookings`);
+        // Since we have a single anonymous user, we can create a top-level bookings collection
+        const bookingsCollection = collection(firestore, `bookings`);
         const bookingDocRef = await addDoc(bookingsCollection, bookingData);
 
         // Mark the slot as occupied
@@ -120,14 +131,6 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     } finally {
         setIsSubmitting(false);
     }
-  }
-
-
-  if (isUserLoading) {
-    return <Card className="shadow-lg"><CardContent className="p-6"><Loader2 className="animate-spin" /></CardContent></Card>
-  }
-  if (!user) {
-    return <Card className="shadow-lg"><CardHeader><CardTitle>Please Login</CardTitle><CardDescription>You must be logged in to book a spot.</CardDescription></CardHeader><CardContent><Button className="w-full" asChild><Link href="/auth/login">Login</Link></Button></CardContent></Card>
   }
 
   return (
@@ -153,7 +156,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
                   <SelectContent>
                     {vehicles.length > 0 ? vehicles.map(v => (
                        <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.registrationNumber})</SelectItem>
-                    )) : <SelectItem value="none" disabled>No vehicles found. Add one in your profile.</SelectItem>}
+                    )) : <SelectItem value="none" disabled>No vehicles found.</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -182,7 +185,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
                 <SelectContent>
                   {vehicles.length > 0 ? vehicles.map(v => (
                      <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.registrationNumber})</SelectItem>
-                  )) : <SelectItem value="none" disabled>No vehicles found. Add one in your profile.</SelectItem>}
+                  )) : <SelectItem value="none" disabled>No vehicles found.</SelectItem>}
                 </SelectContent>
               </Select>
             </div>

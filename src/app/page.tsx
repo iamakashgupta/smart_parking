@@ -37,11 +37,8 @@ export default function LandingPage() {
           </span>
         </Link>
         <nav className="flex items-center gap-4">
-          <Button variant="ghost" asChild>
-            <Link href="/auth/login">Sign In</Link>
-          </Button>
           <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/auth/signup">Get Started</Link>
+            <Link href="/dashboard">Explore App</Link>
           </Button>
         </nav>
       </header>
@@ -67,20 +64,22 @@ export default function LandingPage() {
               Smart, simple, and seamless parking. Real-time availability and easy booking at your fingertips.
             </p>
             <div className="max-w-2xl mx-auto mt-8">
-              <form className="flex flex-col gap-4 sm:flex-row sm:bg-white sm:p-2 sm:rounded-lg sm:shadow-lg">
-                <div className="relative flex-grow">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Enter a location, or landmark"
-                    className="w-full h-14 pl-10 bg-white sm:border-none sm:h-12 sm:bg-transparent text-foreground"
-                  />
+                <div className="flex flex-col gap-4 sm:flex-row sm:bg-white sm:p-2 sm:rounded-lg sm:shadow-lg">
+                    <div className="relative flex-grow">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <Input
+                        type="text"
+                        placeholder="Enter a location, or landmark"
+                        className="w-full h-14 pl-10 bg-white sm:border-none sm:h-12 sm:bg-transparent text-foreground"
+                        />
+                    </div>
+                    <Button asChild size="lg" className="h-14 sm:h-12 sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+                        <Link href="/dashboard/lots">
+                            <Search className="mr-2 h-5 w-5" />
+                            Find Parking
+                        </Link>
+                    </Button>
                 </div>
-                <Button size="lg" className="h-14 sm:h-12 sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
-                  <Search className="mr-2 h-5 w-5" />
-                  Find Parking
-                </Button>
-              </form>
             </div>
           </div>
         </section>

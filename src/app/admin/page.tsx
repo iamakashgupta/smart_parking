@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, ParkingCircle, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit, orderBy, collectionGroup } from 'firebase/firestore';
+import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { ParkingLot, Booking } from '@/lib/types';
 
 export default function AdminDashboardPage() {
@@ -21,9 +21,9 @@ export default function AdminDashboardPage() {
 
   // Queries
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
-  const allBookingsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings')) : null, [firestore]);
-  const activeBookingsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings'), where('status', '==', 'Active')) : null, [firestore]);
-  const recentActivityQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4)) : null, [firestore]);
+  const allBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings')) : null, [firestore]);
+  const activeBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), where('status', '==', 'Active')) : null, [firestore]);
+  const recentActivityQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4)) : null, [firestore]);
   
   // Hooks
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);

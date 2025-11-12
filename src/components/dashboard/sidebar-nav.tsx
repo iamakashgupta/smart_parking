@@ -4,10 +4,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Map,
-  BookMarked,
-  User,
   LifeBuoy,
-  ParkingCircle,
   Settings,
 } from 'lucide-react';
 import {
@@ -18,22 +15,17 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
-  useSidebar,
 } from '@/components/ui/sidebar';
 import { Icons } from '@/components/icons';
-import { UserNav } from './user-nav';
 import { Separator } from '@/components/ui/separator';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/lots', label: 'Find Parking', icon: Map },
-  { href: '/dashboard/bookings', label: 'My Bookings', icon: BookMarked },
-  { href: '/dashboard/profile', label: 'Profile', icon: User },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { open } = useSidebar();
   
   return (
     <Sidebar>
@@ -51,7 +43,7 @@ export function DashboardSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>
