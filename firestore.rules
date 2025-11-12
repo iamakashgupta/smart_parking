@@ -28,11 +28,19 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && isOwner(userId);
     }
 
+    // Top-level bookings collection for admin queries
+    match /bookings/{bookingId} {
+      // Allow user to create their own booking document here
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Allow admins (or for now, any signed-in user) to read all bookings
+      allow read: if isSignedIn(); 
+    }
+
     // Parking Lots: Any signed-in user can read lot information.
-    // Writing to lots is restricted. For this prototype, we will allow any signed-in user to write.
+    // Writing to lots is restricted to admins (for now, any signed-in user can write for prototype)
     match /parking_lots/{lotId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn(); // In production, this would be restricted to admins
+      allow write: if isSignedIn();
     }
     
     // Slots: Any signed-in user can read slot info for real-time updates.
@@ -40,14 +48,9 @@ service cloud.firestore {
     match /parking_lots/{lotId}/slots/{slotId} {
       allow read: if isSignedIn();
       // Allow updates (e.g. isOccupied) if the user is signed in.
-      // In production, this might be handled by a backend service or IoT device role.
+      // This is permissive for the prototype. In production, this would be a specific role.
       allow update: if isSignedIn();
-      allow write: if isSignedIn(); // Allow creation for admins
-    }
-
-    // Default deny all other access
-    match /{document=**} {
-      allow read, write: if false;
+      allow write: if isSignedIn();
     }
   }
 }

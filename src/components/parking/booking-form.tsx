@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Car } from 'lucide-react';
 import { format, addHours, differenceInHours } from 'date-fns';
-import { Timestamp, addDoc, collection, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
@@ -112,16 +112,23 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
             totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2, // Dummy cost for now
         };
         
-        const bookingsCollection = collection(firestore, `users/${user.uid}/bookings`);
-        const bookingDocRef = await addDoc(bookingsCollection, bookingData);
-        await setDoc(doc(firestore, `users/${user.uid}/bookings`, bookingDocRef.id), { id: bookingDocRef.id }, { merge: true });
+        const batch = writeBatch(firestore);
 
+        // 1. Create booking in user's subcollection
+        const userBookingRef = doc(collection(firestore, 'users', user.uid, 'bookings'));
+        batch.set(userBookingRef, { ...bookingData, id: userBookingRef.id });
 
-        // Mark the slot as occupied
+        // 2. Create booking in top-level collection for admin view
+        const adminBookingRef = doc(collection(firestore, 'bookings'), userBookingRef.id);
+        batch.set(adminBookingRef, { ...bookingData, id: userBookingRef.id });
+
+        // 3. Mark the slot as occupied
         const slotDocRef = doc(firestore, `parking_lots/${lot.id}/slots/${availableSlot.id}`);
-        await updateDoc(slotDocRef, { isOccupied: true });
+        batch.update(slotDocRef, { isOccupied: true });
 
-        onBookingSuccess(bookingDocRef.id);
+        await batch.commit();
+
+        onBookingSuccess(userBookingRef.id);
         toast({ title: 'Booking Successful!', description: 'Your spot is confirmed.' });
     } catch (error) {
         console.error("Error creating booking:", error);
