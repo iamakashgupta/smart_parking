@@ -34,11 +34,10 @@ service cloud.firestore {
     }
 
     // BOOKINGS: Publicly readable for this prototype to solve admin panel issues.
-    // Users can only create, update, or delete their own bookings.
+    // Users can only create their own bookings.
     match /bookings/{bookingId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow list: if isSignedIn(); // Kept for query validation, read rule takes precedence.
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
