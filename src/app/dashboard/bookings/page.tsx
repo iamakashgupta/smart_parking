@@ -30,7 +30,7 @@ export default function MyBookingsPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const bookingsQuery = useMemoFirebase(() => user ? query(collection(firestore, `users/${user.uid}/bookings`), orderBy('startTime', 'desc')) : null, [firestore, user]);
+  const bookingsQuery = useMemoFirebase(() => (firestore && user) ? query(collection(firestore, `users/${user.uid}/bookings`), orderBy('startTime', 'desc')) : null, [firestore, user]);
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
 
   const getStatusVariant = (status: string) => {
@@ -49,7 +49,7 @@ export default function MyBookingsPage() {
   };
 
   const renderContent = () => {
-    if (isUserLoading || (user && isLoadingBookings)) {
+    if (isUserLoading || isLoadingBookings) {
       return (
         <TableRow>
           <TableCell colSpan={5} className="h-24 text-center">
@@ -75,7 +75,7 @@ export default function MyBookingsPage() {
           <TableCell>
             <div className="font-medium">{booking.lotName}</div>
             <div className="text-sm text-muted-foreground hidden md:inline">
-              Slot {booking.slotId}
+              Slot {booking.slotId.substring(0, 8)}...
             </div>
           </TableCell>
           <TableCell className="hidden md:table-cell">

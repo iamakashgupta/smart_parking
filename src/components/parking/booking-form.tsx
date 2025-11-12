@@ -38,7 +38,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData } = useDoc<User>(userDocRef);
   const vehicles = userData?.vehicles ?? [];
 

@@ -47,7 +47,7 @@ export default function ProfilePage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<User>(userDocRef);
 
   const [name, setName] = useState('');

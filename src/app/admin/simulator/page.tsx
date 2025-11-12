@@ -28,10 +28,10 @@ export default function AdminSimulatorPage() {
   const [selectedLotId, setSelectedLotId] = useState<string | undefined>();
   const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>();
   
-  const slotsQuery = useMemoFirebase(() => firestore && selectedLotId ? query(collection(firestore, `parking_lots/${selectedLotId}/slots`)) : null, [firestore, selectedLotId]);
+  const slotsQuery = useMemoFirebase(() => (firestore && selectedLotId) ? query(collection(firestore, `parking_lots/${selectedLotId}/slots`)) : null, [firestore, selectedLotId]);
   const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
 
-  const slotDocRef = useMemoFirebase(() => firestore && selectedLotId && selectedSlotId ? doc(firestore, `parking_lots/${selectedLotId}/slots/${selectedSlotId}`) : null, [firestore, selectedLotId, selectedSlotId]);
+  const slotDocRef = useMemoFirebase(() => (firestore && selectedLotId && selectedSlotId) ? doc(firestore, `parking_lots/${selectedLotId}/slots/${selectedSlotId}`) : null, [firestore, selectedLotId, selectedSlotId]);
   const { data: selectedSlot, isLoading: isLoadingSlot } = useDoc<ParkingSlot>(slotDocRef);
 
   useEffect(() => {
@@ -41,10 +41,13 @@ export default function AdminSimulatorPage() {
   }, [lots, selectedLotId]);
 
   useEffect(() => {
-    if (slots && slots.length > 0 && !selectedSlotId) {
+    // Reset slot selection when lot changes or when slots load for the first time
+    if (selectedLotId && slots && slots.length > 0) {
       setSelectedSlotId(slots[0].id);
+    } else {
+      setSelectedSlotId(undefined);
     }
-  }, [slots, selectedSlotId]);
+  }, [selectedLotId, slots]);
 
   const handleLotChange = (lotId: string) => {
     setSelectedLotId(lotId);
@@ -57,7 +60,7 @@ export default function AdminSimulatorPage() {
       await updateDoc(slotDocRef, { isOccupied });
       toast({
         title: "Sensor Event Sent",
-        description: `Slot ${selectedSlotId} in ${lots?.find(l=>l.id === selectedLotId)?.name} marked as ${isOccupied ? 'Occupied' : 'Vacant'}.`,
+        description: `Slot ${selectedSlotId?.substring(0, 8)} in ${lots?.find(l=>l.id === selectedLotId)?.name} marked as ${isOccupied ? 'Occupied' : 'Vacant'}.`,
       });
     } catch (error) {
       console.error("Failed to update slot status:", error);
@@ -66,6 +69,7 @@ export default function AdminSimulatorPage() {
   };
 
   const isOccupied = selectedSlot?.isOccupied ?? false;
+  const isActionDisabled = !selectedLotId || isLoadingLots || isLoadingSlots || isLoadingSlot;
 
   return (
     <div className="container mx-auto px-0">
@@ -84,8 +88,8 @@ export default function AdminSimulatorPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="lot-select">Parking Lot</Label>
-              {isLoadingLots ? <Loader2 className="animate-spin"/> :
-              <Select value={selectedLotId} onValueChange={handleLotChange}>
+              {isLoadingLots ? <Loader2 className="animate-spin mt-2"/> :
+              <Select value={selectedLotId} onValueChange={handleLotChange} disabled={!lots || lots.length === 0}>
                 <SelectTrigger id="lot-select">
                   <SelectValue placeholder="Select a lot" />
                 </SelectTrigger>
@@ -99,15 +103,15 @@ export default function AdminSimulatorPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="slot-select">Parking Slot</Label>
-               {isLoadingSlots || !selectedLotId ? <Loader2 className="animate-spin"/> :
-              <Select value={selectedSlotId} onValueChange={setSelectedSlotId}>
+               {isLoadingSlots || !selectedLotId ? <Loader2 className="animate-spin mt-2"/> :
+              <Select value={selectedSlotId} onValueChange={setSelectedSlotId} disabled={!slots || slots.length === 0}>
                 <SelectTrigger id="slot-select">
                   <SelectValue placeholder="Select a slot" />
                 </SelectTrigger>
                 <SelectContent>
                   {slots?.slice(0,100).map((slot) => ( // Limiting to 100 for performance
                     <SelectItem key={slot.id} value={slot.id}>
-                      Slot {slot.id} (Level {slot.level}, {slot.type})
+                      Slot {slot.id.substring(0,8)}... (Lvl {slot.level}, {slot.type})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -116,7 +120,7 @@ export default function AdminSimulatorPage() {
             </div>
           </div>
           <Card className="bg-muted">
-             {isLoadingSlot ? <div className="p-6 flex justify-center"><Loader2 className="animate-spin" /></div> :
+             {isActionDisabled ? <div className="p-6 flex justify-center"><Loader2 className="animate-spin" /></div> :
             <CardContent className="p-6 flex items-center justify-between">
                 <div className='flex items-center'>
                     <ParkingCircle className='w-6 h-6 text-muted-foreground mr-4'/>
@@ -126,13 +130,14 @@ export default function AdminSimulatorPage() {
                     </div>
                 </div>
               <div className="flex items-center space-x-2">
-                <Label htmlFor="status-switch" className={cn(isOccupied ? "text-muted-foreground" : "text-foreground font-medium")}>
+                <Label htmlFor="status-switch" className={cn(!isOccupied ? "text-foreground font-medium" : "text-muted-foreground")}>
                   Vacant
                 </Label>
                 <Switch 
                   id="status-switch" 
                   checked={isOccupied} 
                   onCheckedChange={handleStatusChange}
+                  disabled={isActionDisabled}
                 />
                 <Label htmlFor="status-switch" className={cn(isOccupied ? "text-foreground font-medium" : "text-muted-foreground")}>
                   Occupied
