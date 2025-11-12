@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, query } from 'firebase/firestore';
 import { PageHeader } from '@/components/dashboard/page-header';
@@ -17,15 +17,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { useState } from 'react';
 import QRCode from 'react-qr-code';
 
-export default function LotDetailPage({ params }: { params: { id: string } }) {
+export default function LotDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const firestore = useFirestore();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
 
-  const lotRef = useMemoFirebase(() => firestore ? doc(firestore, 'parking_lots', params.id) : null, [firestore, params.id]);
+  const lotRef = useMemoFirebase(() => firestore ? doc(firestore, 'parking_lots', id) : null, [firestore, id]);
   const { data: lot, isLoading: isLoadingLot } = useDoc<ParkingLot>(lotRef);
   
-  const slotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `parking_lots/${params.id}/slots`)) : null, [firestore, params.id]);
+  const slotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `parking_lots/${id}/slots`)) : null, [firestore, id]);
   const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
   
   const availableSlotsCount = slots?.filter(s => !s.isOccupied).length ?? 0;
