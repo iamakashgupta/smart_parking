@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Car, Trash2, PlusCircle, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, Vehicle } from '@/lib/types';
@@ -78,7 +78,11 @@ export default function ProfilePage() {
     if (!userDocRef) return;
     setIsSaving(true);
     try {
-      await setDoc(userDocRef, { name, phone }, { merge: true });
+      await updateDoc(userDocRef, { name, phone });
+      if (user) {
+          // This doesn't update the user object from useUser() immediately,
+          // but will be reflected on next login. For immediate UI update, we rely on local state.
+      }
       toast({ title: 'Profile Updated', description: 'Your changes have been saved.' });
     } catch (error) {
       console.error(error);
@@ -140,7 +144,7 @@ export default function ProfilePage() {
                 <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
                 <AvatarFallback>{getInitials(userData?.name || user.displayName)}</AvatarFallback>
               </Avatar>
-              <CardTitle className="text-2xl">{userData?.name || user.displayName}</CardTitle>
+              <CardTitle className="text-2xl">{name}</CardTitle>
               <CardDescription>{user.email}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -165,15 +169,15 @@ export default function ProfilePage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. +91 98765 43210" />
               </div>
             </CardContent>
-            <CardContent>
+            <CardFooter>
                 <Button onClick={handleSaveChanges} disabled={isSaving}>
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Changes
                 </Button>
-            </CardContent>
+            </CardFooter>
           </Card>
 
           <Card>
@@ -201,7 +205,7 @@ export default function ProfilePage() {
                 <p className="text-muted-foreground text-center py-4">No vehicles added yet.</p>
               )}
             </CardContent>
-            <CardContent>
+            <CardFooter>
                 <Dialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen}>
                     <DialogTrigger asChild>
                         <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add New Vehicle</Button>
@@ -237,7 +241,7 @@ export default function ProfilePage() {
                                         <SelectItem value="Regular">Regular</SelectItem>
                                         <SelectItem value="Compact">Compact</SelectItem>
                                         <SelectItem value="Large">Large</SelectItem>
-                                        <SelectItem value="EV">EV</SelectItem>
+                                        <SelectItem value="EV">EV (Electric)</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
@@ -248,7 +252,7 @@ export default function ProfilePage() {
                         </form>
                     </DialogContent>
                 </Dialog>
-            </CardContent>
+            </CardFooter>
           </Card>
         </div>
       </div>
@@ -287,9 +291,9 @@ function ProfileSkeleton() {
               <Skeleton className="h-12 w-full" />
               <Skeleton className="h-12 w-full" />
             </CardContent>
-            <CardContent>
+            <CardFooter>
               <Skeleton className="h-10 w-32" />
-            </CardContent>
+            </CardFooter>
           </Card>
           <Card>
             <CardHeader>
@@ -298,11 +302,10 @@ function ProfileSkeleton() {
             </CardHeader>
             <CardContent className="space-y-4">
               <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-16 w-full" />
             </CardContent>
-             <CardContent>
+             <CardFooter>
               <Skeleton className="h-10 w-36" />
-            </CardContent>
+            </CardFooter>
           </Card>
         </div>
       </div>

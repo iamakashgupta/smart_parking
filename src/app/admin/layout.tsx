@@ -2,7 +2,6 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/s
 import { AdminSidebar } from "@/components/admin/sidebar-nav";
 import { UserNav } from "@/components/dashboard/user-nav";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { Bell } from "lucide-react";
 
 export default function AdminLayout({
@@ -13,7 +12,7 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
       <AdminSidebar />
-      <SidebarInset className="bg-background">
+      <SidebarInset className="bg-secondary/30">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 md:justify-end">
           <SidebarTrigger className="md:hidden" />
           <div className="flex items-center gap-2">

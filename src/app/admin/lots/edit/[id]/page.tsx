@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,13 +54,13 @@ export default function LotEditPage() {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<LotFormData>({
     resolver: zodResolver(lotFormSchema),
     defaultValues: {
-      name: 'Cyber City Parkade',
-      address: 'Sector 24, Gurugram, Haryana',
-      totalSlots: 150,
-      rates: { perHour: 80, perDay: 500 },
+      name: '',
+      address: '',
+      totalSlots: 50,
+      rates: { perHour: 100, perDay: 800 },
       operatingHours: '24/7',
-      slotTypes: ['Regular', 'EV', 'Compact'],
-      distance: '2.5 km',
+      slotTypes: ['Regular'],
+      distance: '0 km',
     }
   });
 
@@ -86,7 +86,7 @@ export default function LotEditPage() {
     
     try {
       if (isNewLot) {
-        const newLotData = {
+        const newLotData: Omit<ParkingLot, 'id'> = {
           ...data,
           images: [
             `https://picsum.photos/seed/${Date.now()}/800/600`,
@@ -94,19 +94,18 @@ export default function LotEditPage() {
           ],
           location: { lat: 28.496, lng: 77.088 }, // Gurugram location
           createdAt: serverTimestamp(),
-          availableSlots: data.totalSlots, // Initially all slots are available
+          availableSlots: data.totalSlots, 
         };
 
         const newLotRef = await addDoc(collection(firestore, 'parking_lots'), newLotData);
 
-        // Batch create slots for the new lot
         const batch = writeBatch(firestore);
         for (let i = 0; i < data.totalSlots; i++) {
           const slotType = data.slotTypes[i % data.slotTypes.length] as SlotType;
           const slotRef = doc(collection(firestore, `parking_lots/${newLotRef.id}/slots`));
           batch.set(slotRef, {
             lotId: newLotRef.id,
-            level: Math.floor(i / 50) + 1, // Using a constant for slots per level
+            level: Math.floor(i / 50) + 1,
             type: slotType,
             isOccupied: false,
           });
@@ -132,7 +131,7 @@ export default function LotEditPage() {
     return <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  if (!isNewLot && !lot) {
+  if (!isNewLot && lot === null) {
     notFound();
   }
 
@@ -159,12 +158,12 @@ export default function LotEditPage() {
           <CardContent className="grid gap-6 md:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="name">Lot Name</Label>
-              <Input id="name" {...register('name')} />
+              <Input id="name" {...register('name')} placeholder="e.g. Cyber City Parkade" />
               {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="address">Address</Label>
-              <Textarea id="address" {...register('address')} />
+              <Textarea id="address" {...register('address')} placeholder="e.g. Sector 24, Gurugram, Haryana" />
               {errors.address && <p className="text-sm text-destructive">{errors.address.message}</p>}
             </div>
             <div className="grid gap-2">
@@ -174,7 +173,7 @@ export default function LotEditPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="operatingHours">Operating Hours</Label>
-              <Input id="operatingHours" {...register('operatingHours')} />
+              <Input id="operatingHours" {...register('operatingHours')} placeholder="e.g. 24/7 or 9am - 11pm" />
               {errors.operatingHours && <p className="text-sm text-destructive">{errors.operatingHours.message}</p>}
             </div>
             <div className="grid gap-2">
@@ -189,7 +188,7 @@ export default function LotEditPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="distance">Distance</Label>
-              <Input id="distance" {...register('distance')} />
+              <Input id="distance" {...register('distance')} placeholder="e.g. 2.5 km"/>
               {errors.distance && <p className="text-sm text-destructive">{errors.distance.message}</p>}
             </div>
             <div className="grid gap-2 md:col-span-2">
@@ -199,9 +198,9 @@ export default function LotEditPage() {
                         <div key={type} className="flex items-center space-x-2">
                             <Checkbox 
                                 id={`slot-type-${type}`}
-                                checked={selectedSlotTypes.includes(type)}
+                                checked={(selectedSlotTypes || []).includes(type)}
                                 onCheckedChange={(checked) => {
-                                    const currentTypes = watch('slotTypes');
+                                    const currentTypes = watch('slotTypes') || [];
                                     if (checked) {
                                         setValue('slotTypes', [...currentTypes, type]);
                                     } else {
@@ -218,13 +217,13 @@ export default function LotEditPage() {
                 {errors.slotTypes && <p className="text-sm text-destructive">{errors.slotTypes.message}</p>}
             </div>
           </CardContent>
-        </Card>
-        <div className="mt-6 flex justify-end">
+          <CardFooter>
             <Button type="submit" disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 {isNewLot ? 'Create Lot' : 'Save Changes'}
             </Button>
-        </div>
+          </CardFooter>
+        </Card>
       </form>
     </div>
   );

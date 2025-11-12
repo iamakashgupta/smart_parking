@@ -1,33 +1,22 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Car } from 'lucide-react';
-import { format, addHours, differenceInHours } from 'date-fns';
-import { Timestamp, addDoc, collection, doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { Calendar as CalendarIcon, Clock, Car, AlertTriangle, Loader2 } from 'lucide-react';
+import { format, addHours, differenceInHours, parse } from 'date-fns';
+import { Timestamp, addDoc, collection, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import type { ParkingLot, Vehicle, User } from '@/lib/types';
+import type { ParkingLot, User } from '@/lib/types';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface BookingFormProps {
   lot: ParkingLot & { slots: any[] };
@@ -63,16 +52,20 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     return `${String(displayHour).padStart(2, '0')}:${minute} ${ampm}`;
   });
+  
+  const parseTime = (timeStr: string) => parse(timeStr, 'hh:mm a', new Date());
 
   const estimatedCost = useMemo(() => {
     if (!date) return 0;
-    const startDateTime = new Date(`${format(date, 'MM/dd/yyyy')} ${startTime}`);
-    const endDateTime = new Date(`${format(date, 'MM/dd/yyyy')} ${endTime}`);
+    
+    const startDateTime = parseTime(startTime);
+    const endDateTime = parseTime(endTime);
+
     if (startDateTime >= endDateTime) return 0;
     
     const hours = differenceInHours(endDateTime, startDateTime);
     return Math.max(1, hours) * lot.rates.perHour;
-  }, [date, startTime, endTime, lot.rates.perHour]);
+  }, [startTime, endTime, lot.rates.perHour]);
 
   const handleCreateBooking = async (isReservation: boolean) => {
     if (!date || !selectedVehicleId || !firestore || !user) {
@@ -97,8 +90,8 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     }
 
     try {
-        const start = new Date();
-        const end = addHours(start, 2); // Dummy 2 hour booking for "Book Now"
+        const startDateTime = isReservation ? new Date(`${format(date, 'MM/dd/yyyy')} ${startTime}`) : new Date();
+        const endDateTime = isReservation ? new Date(`${format(date, 'MM/dd/yyyy')} ${endTime}`) : addHours(startDateTime, 2);
 
         const bookingData = {
             userId: user.uid,
@@ -106,29 +99,23 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
             lotName: lot.name,
             slotId: availableSlot.id,
             vehicleReg: selectedVehicle.registrationNumber,
-            startTime: isReservation ? Timestamp.fromDate(new Date(`${format(date, 'MM/dd/yyyy')} ${startTime}`)) : Timestamp.fromDate(start),
-            endTime: isReservation ? Timestamp.fromDate(new Date(`${format(date, 'MM/dd/yyyy')} ${endTime}`)) : Timestamp.fromDate(end),
+            startTime: Timestamp.fromDate(startDateTime),
+            endTime: Timestamp.fromDate(endDateTime),
             status: isReservation ? 'Confirmed' : 'Active',
             totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2, // Dummy cost for now
         };
         
         const batch = writeBatch(firestore);
 
-        // 1. Create booking in user's subcollection
-        const userBookingRef = doc(collection(firestore, 'users', user.uid, 'bookings'));
-        batch.set(userBookingRef, { ...bookingData, id: userBookingRef.id });
+        const bookingRef = doc(collection(firestore, 'bookings'));
+        batch.set(bookingRef, { ...bookingData, id: bookingRef.id });
 
-        // 2. Create booking in top-level collection for admin view
-        const adminBookingRef = doc(collection(firestore, 'bookings'), userBookingRef.id);
-        batch.set(adminBookingRef, { ...bookingData, id: userBookingRef.id });
-
-        // 3. Mark the slot as occupied
         const slotDocRef = doc(firestore, `parking_lots/${lot.id}/slots/${availableSlot.id}`);
         batch.update(slotDocRef, { isOccupied: true });
 
         await batch.commit();
 
-        onBookingSuccess(userBookingRef.id);
+        onBookingSuccess(bookingRef.id);
         toast({ title: 'Booking Successful!', description: 'Your spot is confirmed.' });
     } catch (error) {
         console.error("Error creating booking:", error);

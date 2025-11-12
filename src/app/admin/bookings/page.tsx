@@ -19,14 +19,13 @@ import { Loader2 } from 'lucide-react';
 export default function AdminBookingsPage() {
   const firestore = useFirestore();
 
-  // Query top-level bookings collection
   const bookingsQuery = useMemoFirebase(() => 
     firestore ? query(collection(firestore, `bookings`), orderBy('startTime', 'desc')) : null, 
     [firestore]
   );
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
       case 'Active':
         return 'default';
@@ -66,7 +65,7 @@ export default function AdminBookingsPage() {
             {booking.startTime ? format(booking.startTime.toDate(), 'MMM d, h:mm a') : 'N/A'}
           </TableCell>
           <TableCell>
-            <Badge variant={getStatusVariant(booking.status) as any}>
+            <Badge variant={getStatusVariant(booking.status)}>
               {booking.status}
             </Badge>
           </TableCell>
@@ -97,7 +96,7 @@ export default function AdminBookingsPage() {
           <CardTitle>System-Wide Booking History</CardTitle>
           <CardDescription>Monitor all recent and ongoing parking activity.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>

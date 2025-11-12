@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // Helper functions
+    // Helper functions to make rules more readable.
     function isSignedIn() {
       return request.auth != null;
     }
@@ -12,45 +12,42 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Users: Can read/write their own profile.
+    // USERS: Users can read and write to their own user document.
+    // This allows them to update their profile and manage their vehicles.
     match /users/{userId} {
       allow read, update: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn();
+      // Allow creation of a user document only if the user is signed in
+      // and the document ID matches their UID. This happens on first sign up.
+      allow create: if isSignedIn() && request.auth.uid == userId;
     }
     
-    // User Vehicles: Can manage their own vehicles.
-    match /users/{userId}/vehicles/{vehicleId} {
-      allow read, write: if isSignedIn() && isOwner(userId);
-    }
-    
-    // User Bookings: Can manage their own bookings.
-    match /users/{userId}/bookings/{bookingId} {
-      allow read, write: if isSignedIn() && isOwner(userId);
-    }
-
-    // Top-level bookings collection for admin queries
-    match /bookings/{bookingId} {
-      // Allow user to create their own booking document here
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      // Allow admins (or for now, any signed-in user) to read all bookings
-      allow read: if isSignedIn(); 
-    }
-
-    // Parking Lots: Any signed-in user can read lot information.
-    // Writing to lots is restricted to admins (for now, any signed-in user can write for prototype)
+    // PARKING LOTS: Any user (signed in or not) can read parking lot data.
+    // This is necessary for users to browse lots before logging in.
+    // For this prototype, any signed-in user can create, update, or delete lots.
+    // In a production app, this would be restricted to an 'admin' role.
     match /parking_lots/{lotId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read: if true;
+      allow write: if isSignedIn(); // Permissive for prototype
     }
     
-    // Slots: Any signed-in user can read slot info for real-time updates.
-    // Writing to slots is restricted.
+    // SLOTS: Any user (signed in or not) can read slot information.
+    // This allows for real-time occupancy updates on the UI.
+    // Writing is restricted to signed-in users (for booking or simulation).
     match /parking_lots/{lotId}/slots/{slotId} {
-      allow read: if isSignedIn();
-      // Allow updates (e.g. isOccupied) if the user is signed in.
-      // This is permissive for the prototype. In production, this would be a specific role.
-      allow update: if isSignedIn();
-      allow write: if isSignedIn();
+      allow read: if true;
+      allow write: if isSignedIn(); // Permissive for prototype
+    }
+
+    // BOOKINGS: This is a top-level collection for easier admin queries.
+    // A user can create a booking if they are signed in and the booking's userId matches their own.
+    // Users can read their own bookings from this collection.
+    // Admins would have broader read access.
+    match /bookings/{bookingId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // For the admin panel, we need a way to list all bookings.
+      // A more secure rule would check for an admin claim. For now, any signed-in user can list.
+      allow list: if isSignedIn(); 
     }
   }
 }

@@ -2,12 +2,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Search } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { MapPin, Search, Calendar, Car } from 'lucide-react';
 
 export default function LandingPage() {
-  const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-landing');
-
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-background/80 backdrop-blur-sm">
@@ -36,7 +33,7 @@ export default function LandingPage() {
             SmartPark
           </span>
         </Link>
-        <nav className="flex items-center gap-4">
+        <nav className="hidden md:flex items-center gap-4">
            <Button variant="ghost" asChild>
                 <Link href="/dashboard">Dashboard</Link>
             </Button>
@@ -47,20 +44,23 @@ export default function LandingPage() {
                 <Link href="/auth/signup">Sign Up</Link>
             </Button>
         </nav>
+        <nav className="md:hidden">
+            <Button variant="outline" asChild>
+                <Link href="/auth/login">Menu</Link>
+            </Button>
+        </nav>
       </header>
 
       <main className="flex-1">
         <section className="relative flex items-center justify-center w-full min-h-[60vh] pt-24 pb-12 md:min-h-[80vh] text-center">
-          {heroImage && (
-            <Image
-              src={heroImage.imageUrl}
-              alt={heroImage.description}
+          <Image
+              src="https://picsum.photos/seed/hero-parking/1920/1080"
+              alt="Aerial view of a city with parking lots"
               fill
               className="object-cover"
               priority
-              data-ai-hint={heroImage.imageHint}
+              data-ai-hint="city parking"
             />
-          )}
           <div className="absolute inset-0 bg-black/60" />
           <div className="relative z-10 container mx-auto px-4">
             <h1 className="text-4xl font-extrabold tracking-tight text-white md:text-5xl lg:text-6xl">
@@ -106,14 +106,14 @@ export default function LandingPage() {
               </div>
               <div className="flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md">
                 <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-primary/10 text-primary">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/><path d="M3 10h18"/><path d="m16 20 2 2 4-4"/></svg>
+                    <Calendar className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground">2. Book</h3>
                 <p className="mt-2 text-muted-foreground">Reserve your spot in advance or book instantly. Get a digital token for seamless entry.</p>
               </div>
               <div className="flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md">
                  <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-primary/10 text-primary">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8"><path d="M10 22v-6.57"/><path d="M10 12v-6.57"/><path d="M14 22v-1.57"/><path d="M14 17v-1.57"/><path d="M14 12v-1.57"/><path d="M14 7v-1.57"/><path d="M18 13.43V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-2.57"/><path d="M6 10h.01"/><path d="M6 14h.01"/></svg>
+                    <Car className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground">3. Park</h3>
                 <p className="mt-2 text-muted-foreground">Arrive, check-in with your QR code, and park your car. Checkout is just as easy.</p>

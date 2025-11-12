@@ -61,7 +61,9 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
   });
 
   const onSubmit = async (data: UserFormValue) => {
+    if (!auth || !firestore) return;
     setIsLoading(true);
+
     try {
       if (authType === 'signup') {
         if (!data.name) {
@@ -75,9 +77,8 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         const user = userCredential.user;
         await updateProfile(user, { displayName: data.name });
-        // Create user document in Firestore
+        
         await setDoc(doc(firestore, 'users', user.uid), {
-          id: user.uid,
           name: data.name,
           email: user.email,
           phone: '',
@@ -103,20 +104,20 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
   };
 
   const handleGoogleSignIn = async () => {
+    if (!auth || !firestore) return;
     setIsLoading(true);
+
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      // Create user document in Firestore on first Google sign-in
       await setDoc(doc(firestore, 'users', user.uid), {
-        id: user.uid,
         name: user.displayName,
         email: user.email,
         phone: user.phoneNumber || '',
         vehicles: []
-      }, { merge: true }); // Merge to avoid overwriting existing vehicles etc.
+      }, { merge: true });
 
       toast({
         title: 'Logged In with Google',

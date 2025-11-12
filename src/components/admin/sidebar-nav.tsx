@@ -6,6 +6,7 @@ import {
   ParkingSquare,
   BookCopy,
   Cpu,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -14,7 +15,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
+  SidebarFooter
 } from '@/components/ui/sidebar';
 import { Icons } from '@/components/icons';
 import { Separator } from '../ui/separator';
@@ -69,6 +70,19 @@ export function AdminSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+      <SidebarFooter>
+        <Separator className="my-2" />
+         <SidebarMenu>
+           <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip={{ children: 'Exit Admin', side: 'right' }}>
+                <Link href="/dashboard">
+                  <ArrowLeft />
+                  <span>Exit Admin</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -21,15 +21,17 @@ import { Progress } from '@/components/ui/progress';
 import { MoreHorizontal, PlusCircle, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, deleteDoc, doc } from 'firebase/firestore';
 import { ParkingLot } from '@/lib/types';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminLotsPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
-  const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
+  const { data: lots, isLoading: isLoadingLots, error } = useCollection<ParkingLot>(lotsQuery);
 
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -40,6 +42,19 @@ export default function AdminLotsPage() {
       (lot.address && lot.address.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [lots, searchTerm]);
+
+  const handleDeleteLot = async (lotId: string, lotName: string) => {
+    if (!firestore) return;
+    if (confirm(`Are you sure you want to delete "${lotName}"? This action cannot be undone.`)) {
+      try {
+        await deleteDoc(doc(firestore, 'parking_lots', lotId));
+        toast({ title: 'Lot Deleted', description: `"${lotName}" has been removed.` });
+      } catch (error) {
+        console.error("Error deleting lot: ", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete lot.' });
+      }
+    }
+  };
 
   return (
     <div className="container mx-auto px-0">
@@ -66,7 +81,7 @@ export default function AdminLotsPage() {
         </div>
       </PageHeader>
        <Card>
-        <CardContent>
+        <CardContent className="p-0">
       <Table>
         <TableHeader>
           <TableRow>
@@ -87,7 +102,7 @@ export default function AdminLotsPage() {
               </TableCell>
             </TableRow>
           ) : filteredLots.map((lot) => {
-            const availableSlots = lot.availableSlots ?? lot.totalSlots;
+            const availableSlots = lot.availableSlots ?? 0;
             const occupied = lot.totalSlots - availableSlots;
             const occupancy = lot.totalSlots > 0 ? (occupied / lot.totalSlots) * 100 : 0;
             return (
@@ -117,9 +132,9 @@ export default function AdminLotsPage() {
                       <DropdownMenuItem asChild>
                         <Link href={`/admin/lots/edit/${lot.id}`}>Edit Lot Details</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Manage Slots</DropdownMenuItem>
-                      <DropdownMenuItem>Set Pricing</DropdownMenuItem>
-                       <DropdownMenuItem className="text-destructive">Delete Lot</DropdownMenuItem>
+                       <DropdownMenuItem onClick={() => handleDeleteLot(lot.id, lot.name)} className="text-destructive">
+                          Delete Lot
+                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

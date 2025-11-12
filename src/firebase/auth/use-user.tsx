@@ -9,13 +9,15 @@ export function useUser() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChanged returns an unsubscribe function
+    if (!auth) {
+      setIsLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [auth]);
 

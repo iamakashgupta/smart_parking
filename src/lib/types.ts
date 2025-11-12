@@ -5,7 +5,6 @@ export type User = {
   name: string;
   email: string;
   phone?: string;
-  avatarUrl?: string;
   vehicles?: Vehicle[];
 };
 
@@ -48,7 +47,6 @@ export type ParkingSlot = {
   level: number;
   type: SlotType;
   isOccupied: boolean;
-  sensorId?: string;
 };
 
 export type Booking = {
@@ -60,8 +58,6 @@ export type Booking = {
   vehicleReg: string;
   startTime: Timestamp;
   endTime: Timestamp;
-  actualCheckIn?: Timestamp;
-  actualCheckOut?: Timestamp;
   status: 'Confirmed' | 'Active' | 'Completed' | 'Cancelled';
   totalCost: number;
 };

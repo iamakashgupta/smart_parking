@@ -2,15 +2,9 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { ParkingCircle, Loader2 } from 'lucide-react';
@@ -41,17 +35,18 @@ export default function AdminSimulatorPage() {
   }, [lots, selectedLotId]);
 
   useEffect(() => {
-    // Reset slot selection when lot changes or when slots load for the first time
     if (selectedLotId && slots && slots.length > 0) {
-      setSelectedSlotId(slots[0].id);
+      if (!selectedSlotId || !slots.find(s => s.id === selectedSlotId)) {
+        setSelectedSlotId(slots[0].id);
+      }
     } else {
       setSelectedSlotId(undefined);
     }
-  }, [selectedLotId, slots]);
+  }, [selectedLotId, slots, selectedSlotId]);
 
   const handleLotChange = (lotId: string) => {
     setSelectedLotId(lotId);
-    setSelectedSlotId(undefined); // Reset slot selection
+    setSelectedSlotId(undefined);
   };
 
   const handleStatusChange = async (isOccupied: boolean) => {
@@ -60,7 +55,7 @@ export default function AdminSimulatorPage() {
       await updateDoc(slotDocRef, { isOccupied });
       toast({
         title: "Sensor Event Sent",
-        description: `Slot ${selectedSlotId?.substring(0, 8)} in ${lots?.find(l=>l.id === selectedLotId)?.name} marked as ${isOccupied ? 'Occupied' : 'Vacant'}.`,
+        description: `Slot ${selectedSlotId?.substring(0, 8)}... marked as ${isOccupied ? 'Occupied' : 'Vacant'}.`,
       });
     } catch (error) {
       console.error("Failed to update slot status:", error);
@@ -69,7 +64,7 @@ export default function AdminSimulatorPage() {
   };
 
   const isOccupied = selectedSlot?.isOccupied ?? false;
-  const isActionDisabled = !selectedLotId || isLoadingLots || isLoadingSlots || isLoadingSlot;
+  const isActionDisabled = !selectedSlotId || isLoadingLots || isLoadingSlots || isLoadingSlot;
 
   return (
     <div className="container mx-auto px-0">
@@ -119,7 +114,9 @@ export default function AdminSimulatorPage() {
               }
             </div>
           </div>
-          <Card className="bg-muted">
+        </CardContent>
+        <CardFooter>
+          <Card className="bg-muted w-full">
              {isActionDisabled ? <div className="p-6 flex justify-center"><Loader2 className="animate-spin" /></div> :
             <CardContent className="p-6 flex items-center justify-between">
                 <div className='flex items-center'>
@@ -146,7 +143,7 @@ export default function AdminSimulatorPage() {
             </CardContent>
              }
           </Card>
-        </CardContent>
+        </CardFooter>
       </Card>
     </div>
   );

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
+  title: string | React.ReactNode;
   description?: string;
   children?: React.ReactNode;
 }

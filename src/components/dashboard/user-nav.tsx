@@ -23,6 +23,7 @@ export function UserNav() {
   const router = useRouter();
 
   const handleSignOut = async () => {
+    if (!auth) return;
     await signOut(auth);
     router.push('/');
   };

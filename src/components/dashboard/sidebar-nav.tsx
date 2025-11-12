@@ -6,7 +6,6 @@ import {
   Map,
   BookCopy,
   User,
-  LifeBuoy,
   Settings,
 } from 'lucide-react';
 import {
@@ -33,15 +32,19 @@ export function DashboardSidebar() {
   const pathname = usePathname();
   const { user } = useUser();
   
+  if (!user) {
+    return null;
+  }
+  
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <Icons.logo className="w-8 h-8 text-primary" />
           <span className="text-lg font-semibold text-foreground group-data-[collapsible=icon]:hidden">
             SmartPark
           </span>
-        </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
@@ -69,14 +72,6 @@ export function DashboardSidebar() {
                 <Link href="/admin">
                   <Settings />
                   <span>Admin Panel</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-           <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{ children: 'Help & Support', side: 'right' }}>
-                <Link href="#">
-                  <LifeBuoy />
-                  <span>Help & Support</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

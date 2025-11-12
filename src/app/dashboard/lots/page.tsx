@@ -19,19 +19,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+const slotTypeFilters: SlotType[] = ['Compact', 'Regular', 'Large', 'EV', 'Disabled'];
+
 export default function FindLotsPage() {
   const firestore = useFirestore();
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSlotTypes, setSelectedSlotTypes] = useState<Record<SlotType, boolean>>({
-    Compact: false,
-    Regular: false,
-    Large: false,
-    EV: false,
-    Disabled: false
-  });
+  const [selectedSlotTypes, setSelectedSlotTypes] = useState<Record<string, boolean>>({});
 
   const handleFilterChange = (type: SlotType, checked: boolean) => {
     setSelectedSlotTypes(prev => ({ ...prev, [type]: checked }));
@@ -81,10 +77,10 @@ export default function FindLotsPage() {
               <DropdownMenuContent className="w-56">
                 <DropdownMenuLabel>Filter by Slot Type</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {(Object.keys(selectedSlotTypes) as SlotType[]).map(type => (
+                {slotTypeFilters.map(type => (
                    <DropdownMenuCheckboxItem 
                      key={type}
-                     checked={selectedSlotTypes[type]}
+                     checked={selectedSlotTypes[type] || false}
                      onCheckedChange={(checked) => handleFilterChange(type, !!checked)}
                    >
                     {type}
@@ -113,7 +109,7 @@ export default function FindLotsPage() {
 
 function CardSkeleton() {
     return (
-        <div className="flex flex-col space-y-3">
+        <div className="flex flex-col space-y-3 p-4 border rounded-lg">
             <Skeleton className="h-[190px] w-full rounded-xl" />
             <div className="space-y-2">
                 <Skeleton className="h-4 w-3/4" />

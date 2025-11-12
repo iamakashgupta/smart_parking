@@ -8,7 +8,7 @@ export default function AuthLayout({
 }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 md:top-8 md:left-8">
         <Link href="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
           <Icons.logo className="w-8 h-8 text-primary" />
           <span className="text-xl font-bold tracking-tight">SmartPark</span>

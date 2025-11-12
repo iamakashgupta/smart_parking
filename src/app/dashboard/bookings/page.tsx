@@ -30,12 +30,12 @@ export default function MyBookingsPage() {
 
   const bookingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'users', user.uid, 'bookings'), orderBy('startTime', 'desc'));
+    return query(collection(firestore, 'bookings'), where('userId', '==', user.uid), orderBy('startTime', 'desc'));
   }, [firestore, user]);
 
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
 
-  const getStatusVariant = (status: string) => {
+  const getStatusVariant = (status: string): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
       case 'Active':
         return 'default';
@@ -77,14 +77,14 @@ export default function MyBookingsPage() {
           <TableCell>
             <div className="font-medium">{booking.lotName}</div>
             <div className="text-sm text-muted-foreground hidden md:inline">
-              Slot {booking.slotId.substring(0, 8)}...
+              Slot ID: {booking.slotId.substring(0, 8)}...
             </div>
           </TableCell>
           <TableCell className="hidden md:table-cell">
             {booking.startTime ? format(booking.startTime.toDate(), 'MMM d, yyyy, h:mm a') : 'N/A'}
           </TableCell>
           <TableCell>
-            <Badge variant={getStatusVariant(booking.status) as any}>
+            <Badge variant={getStatusVariant(booking.status)}>
               {booking.status}
             </Badge>
           </TableCell>
@@ -118,7 +118,6 @@ export default function MyBookingsPage() {
         </TableRow>
     );
   };
-
 
   return (
     <div className="container mx-auto px-0">

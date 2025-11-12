@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface LotCardProps {
   lot: ParkingLot;
@@ -17,6 +18,7 @@ interface LotCardProps {
 
 export function LotCard({ lot }: LotCardProps) {
   const firestore = useFirestore();
+  
   const slotsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, `parking_lots/${lot.id}/slots`), where('isOccupied', '==', false))
@@ -24,7 +26,11 @@ export function LotCard({ lot }: LotCardProps) {
   
   const { data: availableSlots, isLoading } = useCollection(slotsQuery);
 
-  const availableCount = isLoading ? (lot.availableSlots ?? 0) : (availableSlots?.length ?? 0);
+  if (isLoading) {
+    return <CardSkeleton />;
+  }
+
+  const availableCount = availableSlots?.length ?? 0;
   const occupancy = lot.totalSlots > 0 ? ((lot.totalSlots - availableCount) / lot.totalSlots) * 100 : 0;
 
   return (
@@ -34,8 +40,8 @@ export function LotCard({ lot }: LotCardProps) {
           <Image
             src={lot.images[0]}
             alt={`Image of ${lot.name}`}
-            layout="fill"
-            objectFit="cover"
+            fill
+            style={{ objectFit: 'cover' }}
             data-ai-hint="parking garage"
           />
           <div className="absolute top-2 right-2">
@@ -80,4 +86,20 @@ export function LotCard({ lot }: LotCardProps) {
       </CardFooter>
     </Card>
   );
+}
+
+function CardSkeleton() {
+    return (
+        <div className="flex flex-col space-y-3 p-4 border rounded-lg">
+            <Skeleton className="h-[190px] w-full rounded-xl" />
+            <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+            </div>
+             <div className="flex justify-between items-center pt-4">
+                <Skeleton className="h-6 w-1/4" />
+                <Skeleton className="h-10 w-1/3" />
+            </div>
+        </div>
+    )
 }

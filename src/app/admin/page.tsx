@@ -1,20 +1,14 @@
 'use client';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, ParkingCircle, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { ParkingLot, Booking } from '@/lib/types';
+import { format } from 'date-fns';
 
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
@@ -23,7 +17,7 @@ export default function AdminDashboardPage() {
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
   const allBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings')) : null, [firestore]);
   const activeBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), where('status', '==', 'Active')) : null, [firestore]);
-  const recentActivityQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4)) : null, [firestore]);
+  const recentActivityQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(5)) : null, [firestore]);
   
   // Hooks
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
@@ -34,9 +28,9 @@ export default function AdminDashboardPage() {
   // Calculations
   const totalRevenue = allBookings?.filter(b => b.status === 'Completed').reduce((sum, b) => sum + (b.totalCost || 0), 0) ?? 0;
   const activeBookingsCount = activeBookings?.length ?? 0;
-
+  
   const { totalOccupancy, totalSlots } = lots?.reduce((acc, lot) => {
-    const occupied = lot.totalSlots - (lot.availableSlots || lot.totalSlots);
+    const occupied = lot.totalSlots - (lot.availableSlots ?? 0);
     acc.totalOccupancy += occupied;
     acc.totalSlots += lot.totalSlots;
     return acc;
@@ -90,32 +84,25 @@ export default function AdminDashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="col-span-4">
              <CardHeader>
-                <CardTitle>Weekly Revenue</CardTitle>
-                <CardDescription>Chart not implemented yet.</CardDescription>
+                <CardTitle>System Activity</CardTitle>
+                <CardDescription>Latest bookings and check-ins across all lots.</CardDescription>
              </CardHeader>
-             <CardContent className="pl-2 flex items-center justify-center h-[300px] text-muted-foreground">
-                Coming soon...
-            </CardContent>
-          </Card>
-          <Card className="col-span-4 lg:col-span-3">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest check-ins and check-outs.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
+             <CardContent className="pl-2">
+               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>User ID</TableHead>
                     <TableHead>Lot</TableHead>
+                    <TableHead>Time</TableHead>
                     <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {recentActivity?.map(activity => (
                      <TableRow key={activity.id}>
-                        <TableCell className="truncate text-xs">{activity.userId}</TableCell>
+                        <TableCell className="truncate text-xs max-w-[100px]">{activity.userId}</TableCell>
                         <TableCell>{activity.lotName}</TableCell>
+                         <TableCell>{format(activity.startTime.toDate(), 'h:mm a')}</TableCell>
                         <TableCell>
                           <Badge variant={activity.status === 'Active' ? 'default' : 'secondary'}>
                             {activity.status === 'Active' ? 'Check-in' : activity.status}
@@ -125,6 +112,15 @@ export default function AdminDashboardPage() {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+          <Card className="col-span-4 lg:col-span-3">
+            <CardHeader>
+              <CardTitle>Revenue Analytics</CardTitle>
+              <CardDescription>Chart not implemented yet.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center h-[300px] text-muted-foreground">
+              Coming soon...
             </CardContent>
           </Card>
         </div>

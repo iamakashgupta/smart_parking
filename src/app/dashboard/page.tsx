@@ -32,17 +32,17 @@ export default function DashboardHomePage() {
         description="Find and manage your parking hassle-free."
       />
       <div className="space-y-8">
-        <MapView lots={lots ?? []} />
+        <MapView lots={lots ?? []} isLoading={isLoadingLots} />
 
         <div>
           <h2 className="text-2xl font-bold tracking-tight mb-4">Nearby Parking Lots</h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
             {isLoadingLots ? (
                Array.from({ length: 3 }).map((_, i) => (
                 <CardSkeleton key={i} />
               ))
             ) : (
-              lots?.map((lot) => (
+              lots?.slice(0,3).map((lot) => (
                 <LotCard key={lot.id} lot={lot} />
               ))
             )}
@@ -56,7 +56,7 @@ export default function DashboardHomePage() {
 
 function CardSkeleton() {
     return (
-        <div className="flex flex-col space-y-3">
+        <div className="flex flex-col space-y-3 p-4 border rounded-lg">
             <Skeleton className="h-[190px] w-full rounded-xl" />
             <div className="space-y-2">
                 <Skeleton className="h-4 w-3/4" />

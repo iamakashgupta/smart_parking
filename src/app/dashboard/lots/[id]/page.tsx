@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc, collection, query } from 'firebase/firestore';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { BookingForm } from '@/components/parking/booking-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,13 +13,7 @@ import Link from 'next/link';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ParkingLot, ParkingSlot, SlotType } from '@/lib/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useState } from 'react';
 import QRCode from 'react-qr-code';
 
@@ -86,7 +80,7 @@ export default function LotDetailPage({ params }: { params: { id: string } }) {
               src={lot.images[0]}
               alt={`Hero image for ${lot.name}`}
               fill
-              objectFit="cover"
+              style={{objectFit: 'cover'}}
               data-ai-hint="parking garage"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
