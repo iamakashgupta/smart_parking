@@ -1,0 +1,118 @@
+import type { User, ParkingLot, Booking } from './types';
+
+export const demoUsers: User[] = [
+  {
+    id: 'user1',
+    name: 'Alex Johnson',
+    email: 'alex.j@example.com',
+    phone: '123-456-7890',
+    avatarUrl: 'https://picsum.photos/seed/avatar1/200/200',
+    vehicles: [
+      { id: 'v1', registrationNumber: 'A1B 2C3', type: 'Regular', make: 'Honda', model: 'Civic' },
+      { id: 'v2', registrationNumber: 'D4E 5F6', type: 'EV', make: 'Tesla', model: 'Model 3' },
+    ],
+  },
+];
+
+export const demoLots: ParkingLot[] = [
+  {
+    id: 'lot1',
+    name: 'Downtown Central Garage',
+    address: '123 Main St, Metropolis',
+    distance: '0.5 miles',
+    location: { lat: 34.0522, lng: -118.2437 },
+    totalSlots: 350,
+    availableSlots: 120,
+    rates: { perHour: 3.5, perDay: 25 },
+    slotTypes: ['Compact', 'Regular', 'EV', 'Disabled'],
+    operatingHours: '24/7',
+    images: ['https://picsum.photos/seed/lot1/800/600', 'https://picsum.photos/seed/lot_interior1/800/600'],
+    slots: Array.from({ length: 350 }, (_, i) => ({
+      id: `s${i + 1}`,
+      lotId: 'lot1',
+      level: Math.floor(i / 50) + 1,
+      type: i % 10 === 0 ? 'EV' : (i % 5 === 0 ? 'Compact' : 'Regular'),
+      isOccupied: i > 230,
+    })),
+  },
+  {
+    id: 'lot2',
+    name: 'Uptown Open Lot',
+    address: '456 Oak Ave, Star City',
+    distance: '1.2 miles',
+    location: { lat: 34.0600, lng: -118.2500 },
+    totalSlots: 150,
+    availableSlots: 25,
+    rates: { perHour: 2, perDay: 18 },
+    slotTypes: ['Regular', 'Large'],
+    operatingHours: '6 AM - 11 PM',
+    images: ['https://picsum.photos/seed/lot2/800/600', 'https://picsum.photos/seed/lot_interior2/800/600'],
+     slots: Array.from({ length: 150 }, (_, i) => ({
+      id: `s${i + 1}`,
+      lotId: 'lot2',
+      level: 1,
+      type: i % 10 === 0 ? 'Large' : 'Regular',
+      isOccupied: i > 125,
+    })),
+  },
+   {
+    id: 'lot3',
+    name: 'Riverfront Parking Complex',
+    address: '789 River Rd, Gotham',
+    distance: '2.5 miles',
+    location: { lat: 34.0450, lng: -118.2600 },
+    totalSlots: 500,
+    availableSlots: 350,
+    rates: { perHour: 4, perDay: 30 },
+    slotTypes: ['Compact', 'Regular', 'EV'],
+    operatingHours: '24/7',
+    images: ['https://picsum.photos/seed/lot3/800/600', 'https://picsum.photos/seed/lot_interior3/800/600'],
+     slots: Array.from({ length: 500 }, (_, i) => ({
+      id: `s${i + 1}`,
+      lotId: 'lot3',
+      level: Math.floor(i/100) + 1,
+      type: i % 15 === 0 ? 'EV' : (i % 7 === 0 ? 'Compact' : 'Regular'),
+      isOccupied: i > 150,
+    })),
+  },
+];
+
+
+export const demoBookings: Booking[] = [
+  {
+    id: 'booking1',
+    userId: 'user1',
+    lotId: 'lot1',
+    slotId: 's50',
+    vehicleReg: 'A1B 2C3',
+    startTime: new Date(new Date().getTime() - 2 * 60 * 60 * 1000),
+    endTime: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
+    actualCheckIn: new Date(new Date().getTime() - 1.9 * 60 * 60 * 1000),
+    status: 'Active',
+    totalCost: 10.50,
+  },
+  {
+    id: 'booking2',
+    userId: 'user1',
+    lotId: 'lot2',
+    slotId: 's10',
+    vehicleReg: 'D4E 5F6',
+    startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
+    endTime: new Date(new Date().setDate(new Date().getDate() - 1)),
+    actualCheckIn: new Date(new Date().setDate(new Date().getDate() - 1)),
+    actualCheckOut: new Date(new Date().setDate(new Date().getDate() - 1)),
+    status: 'Completed',
+    totalCost: 18.00,
+  },
+  {
+    id: 'booking3',
+    userId: 'user1',
+    lotId: 'lot3',
+    slotId: 's100',
+    vehicleReg: 'A1B 2C3',
+    startTime: new Date(new Date().setDate(new Date().getDate() + 2)),
+    endTime: new Date(new Date().setDate(new Date().getDate() + 2)),
+    status: 'Confirmed',
+    totalCost: 12.00,
+  },
+];
