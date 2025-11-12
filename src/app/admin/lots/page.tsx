@@ -20,14 +20,14 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { MoreHorizontal, PlusCircle, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { ParkingLot } from '@/lib/types';
 import { useMemo, useState } from 'react';
 
 export default function AdminLotsPage() {
   const firestore = useFirestore();
-  const lotsQuery = query(collection(firestore, 'parking_lots'));
+  const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,7 +36,7 @@ export default function AdminLotsPage() {
     if (!lots) return [];
     return lots.filter(lot => 
       lot.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      lot.address.toLowerCase().includes(searchTerm.toLowerCase())
+      (lot.address && lot.address.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [lots, searchTerm]);
 

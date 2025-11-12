@@ -2,7 +2,7 @@
 import { PageHeader } from '@/components/dashboard/page-header';
 import { MapView } from '@/components/map-view';
 import { LotCard } from '@/components/parking/lot-card';
-import { useUser, useCollection } from '@/firebase';
+import { useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { ParkingLot } from '@/lib/types';
@@ -12,7 +12,7 @@ export default function DashboardHomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const lotsQuery = query(collection(firestore, 'parking_lots'));
+  const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
 
   const WelcomeMessage = () => {

@@ -1,7 +1,7 @@
 'use client';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { useDoc, useCollection, useFirestore } from '@/firebase';
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { BookingForm } from '@/components/parking/booking-form';
@@ -28,10 +28,10 @@ export default function LotDetailPage({ params }: { params: { id: string } }) {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
 
-  const lotRef = doc(firestore, 'parking_lots', params.id);
+  const lotRef = useMemoFirebase(() => firestore ? doc(firestore, 'parking_lots', params.id) : null, [firestore, params.id]);
   const { data: lot, isLoading: isLoadingLot } = useDoc<ParkingLot>(lotRef);
   
-  const slotsQuery = query(collection(firestore, `parking_lots/${params.id}/slots`));
+  const slotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `parking_lots/${params.id}/slots`)) : null, [firestore, params.id]);
   const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
   
   const availableSlotsCount = slots?.filter(s => !s.isOccupied).length ?? 0;

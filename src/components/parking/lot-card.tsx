@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { ParkingLot } from '@/lib/types';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { useCollection } from '@/firebase';
+import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 
@@ -17,7 +17,7 @@ interface LotCardProps {
 
 export function LotCard({ lot }: LotCardProps) {
   const firestore = useFirestore();
-  const slotsQuery = query(collection(firestore, `parking_lots/${lot.id}/slots`), where('isOccupied', '==', false));
+  const slotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `parking_lots/${lot.id}/slots`), where('isOccupied', '==', false)) : null, [firestore, lot.id]);
   const { data: availableSlots } = useCollection(slotsQuery);
 
   const availableCount = availableSlots?.length ?? 0;
@@ -57,10 +57,10 @@ export function LotCard({ lot }: LotCardProps) {
           <Progress value={occupancy} className="h-2" />
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          {lot.slotTypes.slice(0, 3).map((type) => (
+          {lot.slotTypes && lot.slotTypes.slice(0, 3).map((type) => (
             <Badge key={type} variant="secondary">{type}</Badge>
           ))}
-          {lot.slotTypes.length > 3 && <Badge variant="secondary">+{lot.slotTypes.length - 3}</Badge>}
+          {lot.slotTypes && lot.slotTypes.length > 3 && <Badge variant="secondary">+{lot.slotTypes.length - 3}</Badge>}
         </div>
       </CardContent>
       <CardFooter className="p-4 bg-muted/50 flex justify-between items-center">

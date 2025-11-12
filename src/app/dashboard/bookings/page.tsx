@@ -12,7 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useUser, useCollection, useFirestore } from '@/firebase';
+import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format } from 'date-fns';
@@ -30,7 +30,7 @@ export default function MyBookingsPage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const bookingsQuery = user ? query(collection(firestore, `users/${user.uid}/bookings`), orderBy('startTime', 'desc')) : null;
+  const bookingsQuery = useMemoFirebase(() => user ? query(collection(firestore, `users/${user.uid}/bookings`), orderBy('startTime', 'desc')) : null, [firestore, user]);
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
 
   const getStatusVariant = (status: string) => {
@@ -49,7 +49,7 @@ export default function MyBookingsPage() {
   };
 
   const renderContent = () => {
-    if (isUserLoading || isLoadingBookings) {
+    if (isUserLoading || (user && isLoadingBookings)) {
       return (
         <TableRow>
           <TableCell colSpan={5} className="h-24 text-center">
@@ -79,7 +79,7 @@ export default function MyBookingsPage() {
             </div>
           </TableCell>
           <TableCell className="hidden md:table-cell">
-            {format(booking.startTime.toDate(), 'MMM d, yyyy, h:mm a')}
+            {booking.startTime ? format(booking.startTime.toDate(), 'MMM d, yyyy, h:mm a') : 'N/A'}
           </TableCell>
           <TableCell>
             <Badge variant={getStatusVariant(booking.status) as any}>
@@ -87,7 +87,7 @@ export default function MyBookingsPage() {
             </Badge>
           </TableCell>
           <TableCell className="text-right">
-            ₹{booking.totalCost.toFixed(2)}
+            ₹{(booking.totalCost || 0).toFixed(2)}
           </TableCell>
           <TableCell className="text-right">
              <DropdownMenu>

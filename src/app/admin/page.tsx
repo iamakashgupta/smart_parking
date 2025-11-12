@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, ParkingCircle, Loader2 } from 'lucide-react';
-import { useCollection, useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { ParkingLot, Booking } from '@/lib/types';
 import { format } from 'date-fns';
@@ -21,11 +21,11 @@ export default function AdminDashboardPage() {
   const firestore = useFirestore();
 
   // Queries
-  const lotsQuery = query(collection(firestore, 'parking_lots'));
-  const allBookingsQuery = query(collection(firestore, 'bookings')); // Note: This is not scalable for a real app.
+  const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
+  const allBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings')) : null, [firestore]); // Note: This is not scalable for a real app.
                                                                     // For a real app, you'd aggregate this data.
-  const activeBookingsQuery = query(collection(firestore, 'bookings'), where('status', '==', 'Active'));
-  const recentActivityQuery = query(collection(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4));
+  const activeBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), where('status', '==', 'Active')) : null, [firestore]);
+  const recentActivityQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4)) : null, [firestore]);
   
   // Hooks
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
@@ -34,7 +34,7 @@ export default function AdminDashboardPage() {
   const { data: recentActivity, isLoading: isLoadingRecent } = useCollection<Booking>(recentActivityQuery);
 
   // Calculations
-  const totalRevenue = allBookings?.filter(b => b.status === 'Completed').reduce((sum, b) => sum + b.totalCost, 0) ?? 0;
+  const totalRevenue = allBookings?.filter(b => b.status === 'Completed').reduce((sum, b) => sum + (b.totalCost || 0), 0) ?? 0;
   const activeBookingsCount = activeBookings?.length ?? 0;
 
   const { totalOccupancy, totalSlots } = lots?.reduce((acc, lot) => {

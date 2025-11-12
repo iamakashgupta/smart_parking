@@ -14,7 +14,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { ParkingCircle, Loader2 } from 'lucide-react';
-import { useCollection, useFirestore, useDoc } from '@/firebase';
+import { useCollection, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, query, doc, updateDoc } from 'firebase/firestore';
 import { ParkingLot, ParkingSlot } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -22,16 +22,16 @@ import { cn } from '@/lib/utils';
 export default function AdminSimulatorPage() {
   const firestore = useFirestore();
 
-  const lotsQuery = query(collection(firestore, 'parking_lots'));
+  const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
 
   const [selectedLotId, setSelectedLotId] = useState<string | undefined>();
   const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>();
   
-  const slotsQuery = selectedLotId ? query(collection(firestore, `parking_lots/${selectedLotId}/slots`)) : null;
+  const slotsQuery = useMemoFirebase(() => selectedLotId ? query(collection(firestore, `parking_lots/${selectedLotId}/slots`)) : null, [firestore, selectedLotId]);
   const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
 
-  const slotDocRef = selectedLotId && selectedSlotId ? doc(firestore, `parking_lots/${selectedLotId}/slots/${selectedSlotId}`) : null;
+  const slotDocRef = useMemoFirebase(() => selectedLotId && selectedSlotId ? doc(firestore, `parking_lots/${selectedLotId}/slots/${selectedSlotId}`) : null, [firestore, selectedLotId, selectedSlotId]);
   const { data: selectedSlot, isLoading: isLoadingSlot } = useDoc<ParkingSlot>(slotDocRef);
 
   useEffect(() => {

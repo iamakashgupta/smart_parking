@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar as CalendarIcon, Clock, Car } from 'lucide-react';
 import { format, addHours, differenceInHours } from 'date-fns';
-import { Timestamp, addDoc, collection } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, doc } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -23,10 +23,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import type { ParkingLot, Vehicle, User } from '@/lib/types';
-import { useUser, useDoc, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface BookingFormProps {
   lot: ParkingLot & { slots: any[] };
@@ -38,7 +38,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const userDocRef = user ? doc(firestore, 'users', user.uid) : null;
+  const userDocRef = useMemoFirebase(() => user ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData } = useDoc<User>(userDocRef);
   const vehicles = userData?.vehicles ?? [];
 
@@ -101,6 +101,8 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
             status: 'Confirmed',
             totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2,
         };
+        
+        if (!firestore) throw new Error("Firestore not initialized");
 
         const docRef = await addDoc(collection(firestore, `users/${user.uid}/bookings`), bookingData);
         onBookingSuccess(docRef.id);

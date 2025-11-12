@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCollection } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useMemoFirebase } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ParkingLot, SlotType } from '@/lib/types';
 import { Search, ListFilter } from 'lucide-react';
@@ -21,7 +21,7 @@ import {
 
 export default function FindLotsPage() {
   const firestore = useFirestore();
-  const lotsQuery = query(collection(firestore, 'parking_lots'));
+  const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +49,7 @@ export default function FindLotsPage() {
                             lot.address.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesFilters = activeFilters.length === 0 ||
-                             activeFilters.every(type => lot.slotTypes.includes(type));
+                             (lot.slotTypes && activeFilters.every(type => lot.slotTypes.includes(type)));
 
       return matchesSearch && matchesFilters;
     });
