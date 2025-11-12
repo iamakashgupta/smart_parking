@@ -20,8 +20,7 @@ export default function AdminBookingsPage() {
   const firestore = useFirestore();
 
   // Admin query - simplified to ensure it passes security rules.
-  // Complex queries can sometimes be blocked. Fetching without a specific order
-  // is more reliable for admin-level "list all" functionality.
+  // The query is memoized to prevent re-renders and infinite loops.
   const bookingsQuery = useMemoFirebase(() => 
     firestore ? query(collection(firestore, `bookings`)) : null, 
     [firestore]
