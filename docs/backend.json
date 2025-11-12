@@ -1,0 +1,512 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the SmartPark application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "phone": {
+          "type": "string",
+          "description": "User's phone number."
+        },
+        "vehicleIds": {
+          "type": "array",
+          "description": "References to Vehicle. (Relationship: User 1:N Vehicle)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    },
+    "Vehicle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle",
+      "type": "object",
+      "description": "Represents a user's vehicle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the vehicle entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Vehicle)"
+        },
+        "registrationNumber": {
+          "type": "string",
+          "description": "Vehicle registration number."
+        },
+        "type": {
+          "type": "string",
+          "description": "Vehicle type (e.g., compact, regular, large, EV)."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "registrationNumber",
+        "type"
+      ]
+    },
+    "ParkingLot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ParkingLot",
+      "type": "object",
+      "description": "Represents a parking lot.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the parking lot entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the parking lot."
+        },
+        "occupancy": {
+          "type": "number",
+          "description": "Current occupancy of the parking lot."
+        },
+        "rates": {
+          "type": "string",
+          "description": "Parking rates (e.g., hourly, daily)."
+        },
+        "slotTypes": {
+          "type": "string",
+          "description": "Supported slot types (e.g., compact, regular, large, EV)."
+        },
+        "hours": {
+          "type": "string",
+          "description": "Operating hours of the parking lot."
+        },
+        "distance": {
+          "type": "number",
+          "description": "Distance to the parking lot from a reference point."
+        },
+        "imageUrls": {
+          "type": "array",
+          "description": "URLs of images of the parking lot.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Slot": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Slot",
+      "type": "object",
+      "description": "Represents a parking slot within a parking lot.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the parking slot entity."
+        },
+        "parkingLotId": {
+          "type": "string",
+          "description": "Reference to ParkingLot. (Relationship: ParkingLot 1:N Slot)"
+        },
+        "type": {
+          "type": "string",
+          "description": "Slot type (e.g., compact, regular, large, EV)."
+        },
+        "sensorId": {
+          "type": "string",
+          "description": "Identifier of the sensor associated with the slot."
+        },
+        "disabled": {
+          "type": "boolean",
+          "description": "Indicates if the slot is disabled."
+        }
+      },
+      "required": [
+        "id",
+        "parkingLotId",
+        "type"
+      ]
+    },
+    "Booking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Booking",
+      "type": "object",
+      "description": "Represents a parking booking.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the booking entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Booking)"
+        },
+        "slotId": {
+          "type": "string",
+          "description": "Reference to Slot. (Relationship: Slot 1:N Booking)"
+        },
+        "startTime": {
+          "type": "string",
+          "description": "Booking start time.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "Booking end time.",
+          "format": "date-time"
+        },
+        "checkInTime": {
+          "type": "string",
+          "description": "Actual check-in time.",
+          "format": "date-time"
+        },
+        "checkOutTime": {
+          "type": "string",
+          "description": "Actual check-out time.",
+          "format": "date-time"
+        },
+        "fare": {
+          "type": "number",
+          "description": "Total fare for the booking."
+        },
+        "receiptId": {
+          "type": "string",
+          "description": "Reference to Receipt. (Relationship: Booking 1:1 Receipt)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "slotId",
+        "startTime",
+        "endTime"
+      ]
+    },
+    "Receipt": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Receipt",
+      "type": "object",
+      "description": "Represents a receipt for a booking.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the receipt entity."
+        },
+        "bookingId": {
+          "type": "string",
+          "description": "Reference to Booking. (Relationship: Booking 1:1 Receipt)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount paid."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Receipt timestamp.",
+          "format": "date-time"
+        },
+        "fileUrl": {
+          "type": "string",
+          "description": "URL of the receipt file (PDF or JSON)."
+        }
+      },
+      "required": [
+        "id",
+        "bookingId",
+        "amount",
+        "timestamp"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a payment transaction.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction entity."
+        },
+        "bookingId": {
+          "type": "string",
+          "description": "Reference to Booking. (Relationship: Booking 1:1 Transaction)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Transaction amount."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Transaction timestamp.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Transaction status (e.g., success, pending, failed)."
+        }
+      },
+      "required": [
+        "id",
+        "bookingId",
+        "amount",
+        "timestamp",
+        "status"
+      ]
+    },
+    "Pricing": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Pricing",
+      "type": "object",
+      "description": "Represents pricing rules.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the pricing entity."
+        },
+        "parkingLotId": {
+          "type": "string",
+          "description": "Reference to ParkingLot. (Relationship: ParkingLot 1:N Pricing)"
+        },
+        "slotType": {
+          "type": "string",
+          "description": "Slot type for this pricing rule."
+        },
+        "timeOfDay": {
+          "type": "string",
+          "description": "Time of day for this pricing rule (e.g., peak, off-peak)."
+        },
+        "rate": {
+          "type": "number",
+          "description": "Rate per unit of time."
+        }
+      },
+      "required": [
+        "id",
+        "parkingLotId",
+        "slotType"
+      ]
+    },
+    "Log": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Log",
+      "type": "object",
+      "description": "Represents a log entry.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the log entry."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the log entry.",
+          "format": "date-time"
+        },
+        "level": {
+          "type": "string",
+          "description": "Log level (e.g., INFO, WARN, ERROR)."
+        },
+        "message": {
+          "type": "string",
+          "description": "Log message."
+        },
+        "context": {
+          "type": "string",
+          "description": "Log context."
+        }
+      },
+      "required": [
+        "id",
+        "timestamp",
+        "level",
+        "message"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Path-based ownership is enforced for user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/vehicles/{vehicleId}",
+        "definition": {
+          "entityName": "Vehicle",
+          "schema": {
+            "$ref": "#/backend/entities/Vehicle"
+          },
+          "description": "Stores vehicles owned by a specific user. Enforces path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "vehicleId",
+              "description": "The unique identifier of the vehicle."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bookings/{bookingId}",
+        "definition": {
+          "entityName": "Booking",
+          "schema": {
+            "$ref": "#/backend/entities/Booking"
+          },
+          "description": "Stores bookings made by a specific user. Enforces path-based ownership.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "bookingId",
+              "description": "The unique identifier of the booking."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/parking_lots/{parkingLotId}",
+        "definition": {
+          "entityName": "ParkingLot",
+          "schema": {
+            "$ref": "#/backend/entities/ParkingLot"
+          },
+          "description": "Stores information about parking lots. Publicly readable.",
+          "params": [
+            {
+              "name": "parkingLotId",
+              "description": "The unique identifier of the parking lot."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/parking_lots/{parkingLotId}/slots/{slotId}",
+        "definition": {
+          "entityName": "Slot",
+          "schema": {
+            "$ref": "#/backend/entities/Slot"
+          },
+          "description": "Stores information about parking slots within a specific parking lot. Publicly readable to facilitate real-time updates.",
+          "params": [
+            {
+              "name": "parkingLotId",
+              "description": "The unique identifier of the parking lot."
+            },
+            {
+              "name": "slotId",
+              "description": "The unique identifier of the slot."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/receipts/{receiptId}",
+        "definition": {
+          "entityName": "Receipt",
+          "schema": {
+            "$ref": "#/backend/entities/Receipt"
+          },
+          "description": "Stores receipts for bookings. Accessible to the user who made the booking and admins.",
+          "params": [
+            {
+              "name": "receiptId",
+              "description": "The unique identifier of the receipt."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores transaction details for bookings. Only accessible to admins.",
+          "params": [
+            {
+              "name": "transactionId",
+              "description": "The unique identifier of the transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/pricing/{pricingId}",
+        "definition": {
+          "entityName": "Pricing",
+          "schema": {
+            "$ref": "#/backend/entities/Pricing"
+          },
+          "description": "Stores pricing rules for parking lots. Only accessible to admins.",
+          "params": [
+            {
+              "name": "pricingId",
+              "description": "The unique identifier of the pricing rule."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/logs/{logId}",
+        "definition": {
+          "entityName": "Log",
+          "schema": {
+            "$ref": "#/backend/entities/Log"
+          },
+          "description": "Stores log entries for debugging and monitoring. Only accessible to admins.",
+          "params": [
+            {
+              "name": "logId",
+              "description": "The unique identifier of the log entry."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to prioritize security, scalability, and debuggability, adhering to the principles of Authorization Independence and Structural Segregation. We are using path-based ownership and membership maps to achieve these goals. The structure is also designed to be flat where possible to avoid excessive reads and writes.\n\n**Authorization Independence:**\n\n*   User-owned data (vehicles, bookings) is nested under `/users/{userId}` to leverage path-based security rules.  No `get()` calls are needed to authorize access to user-specific data.\n*   Collaborative data is handled by denormalizing the `members` map, which allows for checking membership directly within the document without needing to read other documents.\n\n**Structural Segregation:**\n\n*   Public data (parking lots, slots) is stored in dedicated collections (`/parking_lots`, `/parking_lots/{parkingLotId}/slots`) to separate it from private user data. This allows for simpler security rules. Since the application requires real-time slot availability updates, slots are located as a subcollection of `/parking_lots/{parkingLotId}/slots` to enable Firestore listeners for real-time updates.\n*   Admin-only data (pricing) is stored in a separate collection (`/pricing`) with security rules restricting access to admin users only.\n\n**QAPs (Rules are not Filters):**\n\n*   The segregation of public and private data, along with path-based ownership, enables secure `list` operations.  For example, listing parking lots is possible without filtering based on user roles, as the parking lots are publicly accessible.\n*   The membership map also supports secure `list` operations in collaborative contexts.\n\n**Example Data Flows:**\n\n*   **Booking a Slot:** When a user books a slot, the booking is created under `/users/{userId}/bookings/{bookingId}`. The `slotId` is included in the booking document. The security rules can then easily verify that the `userId` in the path matches the `userId` in the booking document.\n*   **Checking Slot Availability:** Clients can listen to changes in the `/parking_lots/{parkingLotId}/slots/{slotId}` document to get real-time slot availability without needing authentication, as these documents are publicly readable.\n\nThis structure allows for granular and secure access control while maintaining good performance and scalability."
+  }
+}
