@@ -6,7 +6,7 @@ import { BookingForm } from '@/components/parking/booking-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, DollarSign, Users, Zap, Car, Accessibility } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Zap, Car, Accessibility } from 'lucide-react';
 import Link from 'next/link';
 import {
   ChartContainer,
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import { Progress } from '@/components/ui/progress';
+import { SlotType } from '@/lib/types';
 
 export default function LotDetailPage({ params }: { params: { id: string } }) {
   const lot = demoLots.find((l) => l.id === params.id);
@@ -43,7 +44,7 @@ export default function LotDetailPage({ params }: { params: { id: string } }) {
     },
   } satisfies ChartConfig;
 
-  const slotTypeIcons = {
+  const slotTypeIcons: Record<SlotType, React.ReactNode> = {
     Compact: <Car className="h-5 w-5" />,
     Regular: <Car className="h-5 w-5" />,
     Large: <Car className="h-5 w-5" />,
@@ -70,7 +71,7 @@ export default function LotDetailPage({ params }: { params: { id: string } }) {
             <Image
               src={lot.images[0]}
               alt={`Hero image for ${lot.name}`}
-              layout="fill"
+              fill
               objectFit="cover"
               data-ai-hint="parking garage"
             />
@@ -94,11 +95,11 @@ export default function LotDetailPage({ params }: { params: { id: string } }) {
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Hourly Rate</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="h-4 w-4 text-muted-foreground">₹</span>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${lot.rates.perHour.toFixed(2)}</div>
-                   <p className="text-xs text-muted-foreground">Daily rate ${lot.rates.perDay}</p>
+                  <div className="text-2xl font-bold">₹{lot.rates.perHour.toFixed(2)}</div>
+                   <p className="text-xs text-muted-foreground">Daily rate ₹{lot.rates.perDay}</p>
                 </CardContent>
             </Card>
             <Card>

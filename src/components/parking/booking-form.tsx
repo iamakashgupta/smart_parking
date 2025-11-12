@@ -69,7 +69,7 @@ export function BookingForm({ lot }: BookingFormProps) {
               </div>
               <div className="text-center p-4 bg-muted rounded-md">
                 <p className="text-sm text-muted-foreground">Estimated Cost</p>
-                <p className="text-2xl font-bold text-primary">${lot.rates.perHour.toFixed(2)}<span className="text-base font-normal text-muted-foreground">/hour</span></p>
+                <p className="text-2xl font-bold text-primary">₹{lot.rates.perHour.toFixed(2)}<span className="text-base font-normal text-muted-foreground">/hour</span></p>
                 <p className="text-xs text-muted-foreground mt-1">You will be charged based on duration upon checkout.</p>
               </div>
           </CardContent>
@@ -147,7 +147,7 @@ export function BookingForm({ lot }: BookingFormProps) {
             </div>
             <div className="text-center p-4 bg-muted rounded-md">
                 <p className="text-sm text-muted-foreground">Estimated Cost</p>
-                <p className="text-2xl font-bold text-primary">$7.00</p>
+                <p className="text-2xl font-bold text-primary">₹350.00</p>
                 <p className="text-xs text-muted-foreground mt-1">For a 2-hour reservation.</p>
               </div>
           </CardContent>

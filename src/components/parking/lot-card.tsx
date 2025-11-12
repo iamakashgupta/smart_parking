@@ -56,7 +56,7 @@ export function LotCard({ lot }: LotCardProps) {
       </CardContent>
       <CardFooter className="p-4 bg-muted/50 flex justify-between items-center">
         <div>
-          <span className="text-xl font-bold">${lot.rates.perHour.toFixed(2)}</span>
+          <span className="text-xl font-bold">₹{lot.rates.perHour.toFixed(2)}</span>
           <span className="text-sm text-muted-foreground">/hour</span>
         </div>
         <Button asChild size="sm">

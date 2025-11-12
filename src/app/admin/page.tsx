@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { demoLots, demoBookings } from '@/lib/data';
-import { DollarSign, Users, ParkingCircle } from 'lucide-react';
+import { Users, ParkingCircle } from 'lucide-react';
 import {
   ChartContainer,
   ChartTooltip,
@@ -28,10 +28,10 @@ export default function AdminDashboardPage() {
   const occupancyPercentage = (totalOccupancy / totalSlots) * 100;
 
   const chartData = [
-    { date: "Mon", revenue: 550 }, { date: "Tue", revenue: 480 },
-    { date: "Wed", revenue: 620 }, { date: "Thu", revenue: 780 },
-    { date: "Fri", revenue: 950 }, { date: "Sat", revenue: 1100 },
-    { date: "Sun", revenue: 850 },
+    { date: "Mon", revenue: 5500 }, { date: "Tue", revenue: 4800 },
+    { date: "Wed", revenue: 6200 }, { date: "Thu", revenue: 7800 },
+    { date: "Fri", revenue: 9500 }, { date: "Sat", revenue: 11000 },
+    { date: "Sun", revenue: 8500 },
   ];
 
   const chartConfig = {
@@ -49,10 +49,10 @@ export default function AdminDashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span className="h-4 w-4 text-muted-foreground">₹</span>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">+20.1% from last month</p>
             </CardContent>
           </Card>
@@ -111,23 +111,23 @@ export default function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell>Alex Johnson</TableCell>
-                    <TableCell>Downtown Central</TableCell>
+                    <TableCell>Rohan Sharma</TableCell>
+                    <TableCell>Connaught Place Lot</TableCell>
                     <TableCell><Badge>Check-in</Badge></TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell>Maria Garcia</TableCell>
-                    <TableCell>Uptown Open Lot</TableCell>
+                    <TableCell>Priya Singh</TableCell>
+                    <TableCell>Bandra West Parking</TableCell>
                     <TableCell><Badge variant="secondary">Check-out</Badge></TableCell>
                   </TableRow>
                    <TableRow>
-                    <TableCell>Sam Wilson</TableCell>
-                    <TableCell>Riverfront Complex</TableCell>
+                    <TableCell>Arjun Kumar</TableCell>
+                    <TableCell>Indiranagar Plaza</TableCell>
                     <TableCell><Badge>Check-in</Badge></TableCell>
                   </TableRow>
                    <TableRow>
-                    <TableCell>Jane Doe</TableCell>
-                    <TableCell>Downtown Central</TableCell>
+                    <TableCell>Saanvi Gupta</TableCell>
+                    <TableCell>Connaught Place Lot</TableCell>
                     <TableCell><Badge variant="secondary">Check-out</Badge></TableCell>
                   </TableRow>
                 </TableBody>

@@ -70,7 +70,7 @@ export default function AdminLotsPage() {
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">{lot.totalSlots}</TableCell>
-                <TableCell className="hidden md:table-cell">${lot.rates.perHour.toFixed(2)}</TableCell>
+                <TableCell className="hidden md:table-cell">₹{lot.rates.perHour.toFixed(2)}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

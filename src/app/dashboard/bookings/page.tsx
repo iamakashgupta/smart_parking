@@ -83,7 +83,7 @@ export default function MyBookingsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    ${booking.totalCost.toFixed(2)}
+                    ₹{booking.totalCost.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
                      <DropdownMenu>
