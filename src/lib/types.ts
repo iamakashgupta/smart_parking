@@ -1,10 +1,12 @@
+import { Timestamp } from 'firebase/firestore';
+
 export type User = {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  avatarUrl: string;
-  vehicles: Vehicle[];
+  phone?: string;
+  avatarUrl?: string;
+  vehicles?: Vehicle[];
 };
 
 export type Vehicle = {
@@ -27,7 +29,6 @@ export type ParkingLot = {
     lng: number;
   };
   totalSlots: number;
-  availableSlots: number;
   rates: {
     perHour: number;
     perDay: number;
@@ -35,7 +36,9 @@ export type ParkingLot = {
   slotTypes: SlotType[];
   operatingHours: string;
   images: string[];
-  slots: ParkingSlot[];
+  // Live data, not stored in Firestore directly for the lot
+  availableSlots?: number; 
+  slots?: ParkingSlot[];
 };
 
 export type ParkingSlot = {
@@ -51,12 +54,13 @@ export type Booking = {
   id: string;
   userId: string;
   lotId: string;
+  lotName: string;
   slotId: string;
   vehicleReg: string;
-  startTime: Date;
-  endTime: Date;
-  actualCheckIn?: Date;
-  actualCheckOut?: Date;
+  startTime: Timestamp;
+  endTime: Timestamp;
+  actualCheckIn?: Timestamp;
+  actualCheckOut?: Timestamp;
   status: 'Confirmed' | 'Active' | 'Completed' | 'Cancelled';
   totalCost: number;
 };

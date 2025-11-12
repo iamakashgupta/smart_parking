@@ -1,3 +1,4 @@
+'use client';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -10,33 +11,42 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { demoLots, demoBookings } from '@/lib/data';
-import { Users, ParkingCircle } from 'lucide-react';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartConfig,
-} from '@/components/ui/chart';
-import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
+import { Users, ParkingCircle, Loader2 } from 'lucide-react';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { ParkingLot, Booking } from '@/lib/types';
+import { format } from 'date-fns';
 
 export default function AdminDashboardPage() {
-  const totalRevenue = demoBookings.filter(b => b.status === 'Completed').reduce((sum, b) => sum + b.totalCost, 0) + 532;
-  const activeBookings = demoBookings.filter(b => b.status === 'Active').length;
-  const totalOccupancy = demoLots.reduce((sum, lot) => sum + (lot.totalSlots - lot.availableSlots), 0);
-  const totalSlots = demoLots.reduce((sum, lot) => sum + lot.totalSlots, 0);
-  const occupancyPercentage = (totalOccupancy / totalSlots) * 100;
+  const firestore = useFirestore();
 
-  const chartData = [
-    { date: "Mon", revenue: 5500 }, { date: "Tue", revenue: 4800 },
-    { date: "Wed", revenue: 6200 }, { date: "Thu", revenue: 7800 },
-    { date: "Fri", revenue: 9500 }, { date: "Sat", revenue: 11000 },
-    { date: "Sun", revenue: 8500 },
-  ];
+  // Queries
+  const lotsQuery = query(collection(firestore, 'parking_lots'));
+  const allBookingsQuery = query(collection(firestore, 'bookings')); // Note: This is not scalable for a real app.
+                                                                    // For a real app, you'd aggregate this data.
+  const activeBookingsQuery = query(collection(firestore, 'bookings'), where('status', '==', 'Active'));
+  const recentActivityQuery = query(collection(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4));
+  
+  // Hooks
+  const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
+  const { data: allBookings, isLoading: isLoadingAllBookings } = useCollection<Booking>(allBookingsQuery);
+  const { data: activeBookings, isLoading: isLoadingActive } = useCollection<Booking>(activeBookingsQuery);
+  const { data: recentActivity, isLoading: isLoadingRecent } = useCollection<Booking>(recentActivityQuery);
 
-  const chartConfig = {
-    revenue: { label: "Revenue", color: "hsl(var(--primary))" },
-  } satisfies ChartConfig;
+  // Calculations
+  const totalRevenue = allBookings?.filter(b => b.status === 'Completed').reduce((sum, b) => sum + b.totalCost, 0) ?? 0;
+  const activeBookingsCount = activeBookings?.length ?? 0;
+
+  const { totalOccupancy, totalSlots } = lots?.reduce((acc, lot) => {
+    const occupied = lot.totalSlots - (lot.availableSlots || lot.totalSlots);
+    acc.totalOccupancy += occupied;
+    acc.totalSlots += lot.totalSlots;
+    return acc;
+  }, { totalOccupancy: 0, totalSlots: 0 }) || { totalOccupancy: 0, totalSlots: 0 };
+  
+  const occupancyPercentage = totalSlots > 0 ? (totalOccupancy / totalSlots) * 100 : 0;
+  
+  const isLoading = isLoadingLots || isLoadingAllBookings || isLoadingActive || isLoadingRecent;
 
   return (
     <div className="container mx-auto px-0">
@@ -44,6 +54,7 @@ export default function AdminDashboardPage() {
         title="Admin Dashboard"
         description="Real-time overview of your parking operations."
       />
+      {isLoading ? <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div> :
       <div className="space-y-8">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
@@ -53,7 +64,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+              <p className="text-xs text-muted-foreground">+20.1% from last month (demo)</p>
             </CardContent>
           </Card>
           <Card>
@@ -62,7 +73,7 @@ export default function AdminDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+{activeBookings}</div>
+              <div className="text-2xl font-bold">+{activeBookingsCount}</div>
               <p className="text-xs text-muted-foreground">Currently parked users</p>
             </CardContent>
           </Card>
@@ -82,17 +93,10 @@ export default function AdminDashboardPage() {
           <Card className="col-span-4">
              <CardHeader>
                 <CardTitle>Weekly Revenue</CardTitle>
-                <CardDescription>Showing revenue for the last 7 days.</CardDescription>
+                <CardDescription>Chart not implemented yet.</CardDescription>
              </CardHeader>
-             <CardContent className="pl-2">
-                 <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                  <AreaChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12 }}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.slice(0, 3)} />
-                    <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="line" />} />
-                    <Area dataKey="revenue" type="natural" fill="var(--color-revenue)" fillOpacity={0.4} stroke="var(--color-revenue)" />
-                  </AreaChart>
-                </ChartContainer>
+             <CardContent className="pl-2 flex items-center justify-center h-[300px] text-muted-foreground">
+                Coming soon...
             </CardContent>
           </Card>
           <Card className="col-span-4 lg:col-span-3">
@@ -104,38 +108,30 @@ export default function AdminDashboardPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User</TableHead>
+                    <TableHead>User ID</TableHead>
                     <TableHead>Lot</TableHead>
                     <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>Rohan Sharma</TableCell>
-                    <TableCell>Connaught Place Lot</TableCell>
-                    <TableCell><Badge>Check-in</Badge></TableCell>
+                  {recentActivity?.map(activity => (
+                     <TableRow key={activity.id}>
+                        <TableCell className="truncate text-xs">{activity.userId}</TableCell>
+                        <TableCell>{activity.lotName}</TableCell>
+                        <TableCell>
+                          <Badge variant={activity.status === 'Active' ? 'default' : 'secondary'}>
+                            {activity.status === 'Active' ? 'Check-in' : activity.status}
+                          </Badge>
+                        </TableCell>
                   </TableRow>
-                  <TableRow>
-                    <TableCell>Priya Singh</TableCell>
-                    <TableCell>Bandra West Parking</TableCell>
-                    <TableCell><Badge variant="secondary">Check-out</Badge></TableCell>
-                  </TableRow>
-                   <TableRow>
-                    <TableCell>Arjun Kumar</TableCell>
-                    <TableCell>Indiranagar Plaza</TableCell>
-                    <TableCell><Badge>Check-in</Badge></TableCell>
-                  </TableRow>
-                   <TableRow>
-                    <TableCell>Saanvi Gupta</TableCell>
-                    <TableCell>Connaught Place Lot</TableCell>
-                    <TableCell><Badge variant="secondary">Check-out</Badge></TableCell>
-                  </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </div>
       </div>
+      }
     </div>
   );
 }

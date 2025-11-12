@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,13 +7,21 @@ import { Button } from '@/components/ui/button';
 import type { ParkingLot } from '@/lib/types';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { useCollection } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 interface LotCardProps {
   lot: ParkingLot;
 }
 
 export function LotCard({ lot }: LotCardProps) {
-  const occupancy = ((lot.totalSlots - lot.availableSlots) / lot.totalSlots) * 100;
+  const firestore = useFirestore();
+  const slotsQuery = query(collection(firestore, `parking_lots/${lot.id}/slots`), where('isOccupied', '==', false));
+  const { data: availableSlots } = useCollection(slotsQuery);
+
+  const availableCount = availableSlots?.length ?? 0;
+  const occupancy = lot.totalSlots > 0 ? ((lot.totalSlots - availableCount) / lot.totalSlots) * 100 : 0;
 
   return (
     <Card className="flex flex-col overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -42,7 +51,7 @@ export function LotCard({ lot }: LotCardProps) {
           <div className="flex justify-between items-center">
             <span className="font-medium text-foreground">Availability</span>
             <span className="font-semibold text-primary">
-              {lot.availableSlots} / {lot.totalSlots}
+              {availableCount} / {lot.totalSlots}
             </span>
           </div>
           <Progress value={occupancy} className="h-2" />

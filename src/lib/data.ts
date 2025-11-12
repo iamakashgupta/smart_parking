@@ -1,4 +1,9 @@
+// This file is now deprecated as we are fetching live data from Firestore.
+// It is kept for reference but is not used in the application.
+
 import type { User, ParkingLot, Booking } from './types';
+import { Timestamp } from 'firebase/firestore';
+
 
 export const demoUsers: User[] = [
   {
@@ -35,84 +40,10 @@ export const demoLots: ParkingLot[] = [
       isOccupied: i > 230,
     })),
   },
-  {
-    id: 'lot2',
-    name: 'Bandra West Parking',
-    address: 'Hill Road, Bandra West, Mumbai',
-    distance: '3.5 km',
-    location: { lat: 19.0596, lng: 72.8295 },
-    totalSlots: 150,
-    availableSlots: 25,
-    rates: { perHour: 200, perDay: 1500 },
-    slotTypes: ['Regular', 'Large'],
-    operatingHours: '6 AM - 1 AM',
-    images: ['https://picsum.photos/seed/mumbai_lot/800/600', 'https://picsum.photos/seed/mumbai_interior/800/600'],
-     slots: Array.from({ length: 150 }, (_, i) => ({
-      id: `s${i + 1}`,
-      lotId: 'lot2',
-      level: 1,
-      type: i % 10 === 0 ? 'Large' : 'Regular',
-      isOccupied: i > 125,
-    })),
-  },
-   {
-    id: 'lot3',
-    name: 'Indiranagar Plaza',
-    address: '100 Feet Road, Indiranagar, Bengaluru',
-    distance: '5 km',
-    location: { lat: 12.9716, lng: 77.5946 },
-    totalSlots: 500,
-    availableSlots: 350,
-    rates: { perHour: 180, perDay: 1200 },
-    slotTypes: ['Compact', 'Regular', 'EV'],
-    operatingHours: '24/7',
-    images: ['https://picsum.photos/seed/bengaluru_lot/800/600', 'https://picsum.photos/seed/bengaluru_interior/800/600'],
-     slots: Array.from({ length: 500 }, (_, i) => ({
-      id: `s${i + 1}`,
-      lotId: 'lot3',
-      level: Math.floor(i/100) + 1,
-      type: i % 15 === 0 ? 'EV' : (i % 7 === 0 ? 'Compact' : 'Regular'),
-      isOccupied: i > 150,
-    })),
-  },
 ];
 
 
 export const demoBookings: Booking[] = [
-  {
-    id: 'booking1',
-    userId: 'user1',
-    lotId: 'lot1',
-    slotId: 's50',
-    vehicleReg: 'MH01AB1234',
-    startTime: new Date(new Date().getTime() - 2 * 60 * 60 * 1000),
-    endTime: new Date(new Date().getTime() + 1 * 60 * 60 * 1000),
-    actualCheckIn: new Date(new Date().getTime() - 1.9 * 60 * 60 * 1000),
-    status: 'Active',
-    totalCost: 450.00,
-  },
-  {
-    id: 'booking2',
-    userId: 'user1',
-    lotId: 'lot2',
-    slotId: 's10',
-    vehicleReg: 'KA03CD5678',
-    startTime: new Date(new Date().setDate(new Date().getDate() - 1)),
-    endTime: new Date(new Date().setDate(new Date().getDate() - 1)),
-    actualCheckIn: new Date(new Date().setDate(new Date().getDate() - 1)),
-    actualCheckOut: new Date(new Date().setDate(new Date().getDate() - 1)),
-    status: 'Completed',
-    totalCost: 1500.00,
-  },
-  {
-    id: 'booking3',
-    userId: 'user1',
-    lotId: 'lot3',
-    slotId: 's100',
-    vehicleReg: 'MH01AB1234',
-    startTime: new Date(new Date().setDate(new Date().getDate() + 2)),
-    endTime: new Date(new Date().setDate(new Date().getDate() + 2)),
-    status: 'Confirmed',
-    totalCost: 540.00,
-  },
+    // This is sample data, actual bookings will be read from Firestore.
+    // The structure has changed to use Firestore Timestamps.
 ];

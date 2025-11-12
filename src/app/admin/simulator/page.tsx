@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,44 +12,60 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { demoLots } from '@/lib/data';
 import { toast } from '@/hooks/use-toast';
-import { ParkingCircle } from 'lucide-react';
+import { ParkingCircle, Loader2 } from 'lucide-react';
+import { useCollection, useFirestore, useDoc } from '@/firebase';
+import { collection, query, doc, updateDoc } from 'firebase/firestore';
+import { ParkingLot, ParkingSlot } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 export default function AdminSimulatorPage() {
-  const [selectedLotId, setSelectedLotId] = useState(demoLots[0].id);
-  const [selectedSlotId, setSelectedSlotId] = useState(demoLots[0].slots[0].id);
-  const [isOccupied, setIsOccupied] = useState(demoLots[0].slots[0].isOccupied);
+  const firestore = useFirestore();
 
-  const selectedLot = demoLots.find(lot => lot.id === selectedLotId);
-  const selectedSlot = selectedLot?.slots.find(slot => slot.id === selectedSlotId);
+  const lotsQuery = query(collection(firestore, 'parking_lots'));
+  const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
+
+  const [selectedLotId, setSelectedLotId] = useState<string | undefined>();
+  const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>();
+  
+  const slotsQuery = selectedLotId ? query(collection(firestore, `parking_lots/${selectedLotId}/slots`)) : null;
+  const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
+
+  const slotDocRef = selectedLotId && selectedSlotId ? doc(firestore, `parking_lots/${selectedLotId}/slots/${selectedSlotId}`) : null;
+  const { data: selectedSlot, isLoading: isLoadingSlot } = useDoc<ParkingSlot>(slotDocRef);
+
+  useEffect(() => {
+    if (lots && lots.length > 0 && !selectedLotId) {
+      setSelectedLotId(lots[0].id);
+    }
+  }, [lots, selectedLotId]);
+
+  useEffect(() => {
+    if (slots && slots.length > 0 && !selectedSlotId) {
+      setSelectedSlotId(slots[0].id);
+    }
+  }, [slots, selectedSlotId]);
 
   const handleLotChange = (lotId: string) => {
-    const newLot = demoLots.find(l => l.id === lotId);
-    if (newLot) {
-      setSelectedLotId(lotId);
-      const newSlot = newLot.slots[0];
-      setSelectedSlotId(newSlot.id);
-      setIsOccupied(newSlot.isOccupied);
+    setSelectedLotId(lotId);
+    setSelectedSlotId(undefined); // Reset slot selection
+  };
+
+  const handleStatusChange = async (isOccupied: boolean) => {
+    if (!slotDocRef) return;
+    try {
+      await updateDoc(slotDocRef, { isOccupied });
+      toast({
+        title: "Sensor Event Sent",
+        description: `Slot ${selectedSlotId} in ${lots?.find(l=>l.id === selectedLotId)?.name} marked as ${isOccupied ? 'Occupied' : 'Vacant'}.`,
+      });
+    } catch (error) {
+      console.error("Failed to update slot status:", error);
+      toast({ variant: 'destructive', title: "Update Failed", description: "Could not update slot status." });
     }
   };
 
-  const handleSlotChange = (slotId: string) => {
-     const lot = demoLots.find(l => l.id === selectedLotId);
-     const newSlot = lot?.slots.find(s => s.id === slotId);
-     if (newSlot) {
-        setSelectedSlotId(slotId);
-        setIsOccupied(newSlot.isOccupied);
-     }
-  };
-
-  const handleStatusChange = (checked: boolean) => {
-    setIsOccupied(checked);
-    toast({
-        title: "Sensor Event Sent",
-        description: `Slot ${selectedSlotId} in ${selectedLot?.name} marked as ${checked ? 'Occupied' : 'Vacant'}.`,
-    })
-  }
+  const isOccupied = selectedSlot?.isOccupied ?? false;
 
   return (
     <div className="container mx-auto px-0">
@@ -68,34 +84,39 @@ export default function AdminSimulatorPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="lot-select">Parking Lot</Label>
+              {isLoadingLots ? <Loader2 className="animate-spin"/> :
               <Select value={selectedLotId} onValueChange={handleLotChange}>
                 <SelectTrigger id="lot-select">
                   <SelectValue placeholder="Select a lot" />
                 </SelectTrigger>
                 <SelectContent>
-                  {demoLots.map((lot) => (
+                  {lots?.map((lot) => (
                     <SelectItem key={lot.id} value={lot.id}>{lot.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              }
             </div>
             <div className="grid gap-2">
               <Label htmlFor="slot-select">Parking Slot</Label>
-              <Select value={selectedSlotId} onValueChange={handleSlotChange}>
+               {isLoadingSlots || !selectedLotId ? <Loader2 className="animate-spin"/> :
+              <Select value={selectedSlotId} onValueChange={setSelectedSlotId}>
                 <SelectTrigger id="slot-select">
                   <SelectValue placeholder="Select a slot" />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectedLot?.slots.slice(0,100).map((slot) => ( // Limiting to 100 for performance
+                  {slots?.slice(0,100).map((slot) => ( // Limiting to 100 for performance
                     <SelectItem key={slot.id} value={slot.id}>
                       Slot {slot.id} (Level {slot.level}, {slot.type})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              }
             </div>
           </div>
           <Card className="bg-muted">
+             {isLoadingSlot ? <div className="p-6 flex justify-center"><Loader2 className="animate-spin" /></div> :
             <CardContent className="p-6 flex items-center justify-between">
                 <div className='flex items-center'>
                     <ParkingCircle className='w-6 h-6 text-muted-foreground mr-4'/>
@@ -118,6 +139,7 @@ export default function AdminSimulatorPage() {
                 </Label>
               </div>
             </CardContent>
+             }
           </Card>
         </CardContent>
       </Card>

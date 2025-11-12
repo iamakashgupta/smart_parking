@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -11,10 +10,12 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  updateProfile
 } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import {
   Form,
@@ -27,6 +28,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   authType: 'login' | 'signup';
@@ -45,6 +47,7 @@ type UserFormValue = z.infer<typeof formSchema>;
 export function UserAuthForm({ className, authType, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -61,7 +64,16 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
     setIsLoading(true);
     try {
       if (authType === 'signup') {
-        await createUserWithEmailAndPassword(auth, data.email, data.password);
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+        const user = userCredential.user;
+        await updateProfile(user, { displayName: data.name });
+        await setDoc(doc(firestore, 'users', user.uid), {
+          id: user.uid,
+          name: data.name,
+          email: user.email,
+          phone: '',
+          vehicles: []
+        });
       } else {
         await signInWithEmailAndPassword(auth, data.email, data.password);
       }
@@ -81,7 +93,18 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
     setIsLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Create user document in Firestore on first Google sign-in
+      await setDoc(doc(firestore, 'users', user.uid), {
+        id: user.uid,
+        name: user.displayName,
+        email: user.email,
+        phone: user.phoneNumber || '',
+        vehicles: []
+      }, { merge: true }); // Merge to avoid overwriting existing vehicles etc.
+
       router.push('/dashboard');
     } catch (error: any) {
       toast({

@@ -1,3 +1,4 @@
+'use client';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,11 +18,28 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
-import { MoreHorizontal, PlusCircle, Search } from 'lucide-react';
-import { demoLots } from '@/lib/data';
+import { MoreHorizontal, PlusCircle, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useCollection, useFirestore } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
+import { ParkingLot } from '@/lib/types';
+import { useMemo, useState } from 'react';
 
 export default function AdminLotsPage() {
+  const firestore = useFirestore();
+  const lotsQuery = query(collection(firestore, 'parking_lots'));
+  const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredLots = useMemo(() => {
+    if (!lots) return [];
+    return lots.filter(lot => 
+      lot.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      lot.address.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [lots, searchTerm]);
+
   return (
     <div className="container mx-auto px-0">
       <PageHeader
@@ -31,7 +49,12 @@ export default function AdminLotsPage() {
         <div className="flex items-center gap-2">
            <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search lots..." className="pl-9" />
+              <Input 
+                placeholder="Search lots..." 
+                className="pl-9"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+              />
             </div>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
@@ -54,9 +77,16 @@ export default function AdminLotsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {demoLots.map((lot) => {
-            const occupied = lot.totalSlots - lot.availableSlots;
-            const occupancy = (occupied / lot.totalSlots) * 100;
+          {isLoadingLots ? (
+            <TableRow>
+              <TableCell colSpan={5} className="h-24 text-center">
+                <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+              </TableCell>
+            </TableRow>
+          ) : filteredLots.map((lot) => {
+            const availableSlots = lot.availableSlots ?? lot.totalSlots;
+            const occupied = lot.totalSlots - availableSlots;
+            const occupancy = lot.totalSlots > 0 ? (occupied / lot.totalSlots) * 100 : 0;
             return (
               <TableRow key={lot.id}>
                 <TableCell>
