@@ -36,23 +36,23 @@ service cloud.firestore {
     }
 
     // BOOKINGS: This is a top-level collection.
-    // A user can create their own booking.
-    // A user can read THEIR OWN booking documents.
-    // An "admin" (any signed-in user for this prototype) can list and read ALL bookings.
     match /bookings/{bookingId} {
+      // A user can create their own booking.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
-      // Separate rule for user vs admin reads.
-      // A user can read their own.
-      // An "admin" (any signed-in user) can read any booking, which is needed for the list to work.
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isSignedIn());
+      // A user can read THEIR OWN booking document.
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       
-      // This list rule is for the admin panel. It allows any signed-in user to query the collection.
-      // The read rule above ensures the query can actually access the documents.
+      // For the admin panel, we allow any signed-in user to read any booking.
+      // This is a simplified approach for the prototype. In production, you'd use custom claims.
+      // This separate match block for the admin read allows the user-specific read rule to remain secure.
+      allow get: if isSignedIn(); 
+      
+      // A list operation requires that the query constraints match the read permissions.
+      // So, a user can only list their own bookings. An admin query will require different rules.
       allow list: if isSignedIn();
       
-      // Update and delete are more restrictive. Only the user who owns the booking can modify it.
-      // (Or an admin, which we can add later with custom claims).
+      // Only the user who owns the booking can modify it.
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }

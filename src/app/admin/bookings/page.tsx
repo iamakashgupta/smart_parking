@@ -19,8 +19,12 @@ import { Loader2 } from 'lucide-react';
 export default function AdminBookingsPage() {
   const firestore = useFirestore();
 
+  // Admin query - simplified to ensure it passes security rules.
+  // Complex queries with orderBy can sometimes be blocked if not perfectly indexed
+  // or if they conflict with 'list' vs 'read' permissions.
+  // Fetching without a specific order is more reliable for admin-level "list all" functionality.
   const bookingsQuery = useMemoFirebase(() => 
-    firestore ? query(collection(firestore, `bookings`), orderBy('startTime', 'desc')) : null, 
+    firestore ? query(collection(firestore, `bookings`)) : null, 
     [firestore]
   );
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
@@ -52,7 +56,10 @@ export default function AdminBookingsPage() {
     }
     
     if (bookings && bookings.length > 0) {
-      return bookings.map((booking) => (
+      // Sort client-side since we removed the orderBy from the query
+      const sortedBookings = [...bookings].sort((a, b) => b.startTime.toMillis() - a.startTime.toMillis());
+
+      return sortedBookings.map((booking) => (
         <TableRow key={booking.id}>
            <TableCell className="font-medium truncate text-xs max-w-[100px]">{booking.userId}</TableCell>
           <TableCell>
