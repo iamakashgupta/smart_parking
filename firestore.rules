@@ -15,10 +15,7 @@ service cloud.firestore {
     // USERS: Users can read and write to their own user document.
     // This allows them to update their profile and manage their vehicles.
     match /users/{userId} {
-      allow read, update: if isSignedIn() && isOwner(userId);
-      // Allow creation of a user document only if the user is signed in
-      // and the document ID matches their UID. This happens on first sign up.
-      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow read, update, create: if isSignedIn() && isOwner(userId);
     }
     
     // PARKING LOTS: Any user (signed in or not) can read parking lot data.
@@ -40,11 +37,14 @@ service cloud.firestore {
 
     // BOOKINGS: This is a top-level collection for easier admin queries.
     // A user can create a booking if they are signed in and the booking's userId matches their own.
-    // For the admin panel, we need a way to list all bookings. For this prototype, any signed-in user can.
-    // In a production app, this would be locked down to an admin role.
+    // A user can only read their own bookings.
+    // Admins (any signed-in user for this prototype) can list all bookings for the admin panel.
     match /bookings/{bookingId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read, list: if isSignedIn();
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // For the admin panel, we need a way to list all bookings. 
+      // A more secure rule would check for an admin claim. For now, any signed-in user can list.
+      allow list: if isSignedIn(); 
     }
   }
 }
