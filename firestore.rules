@@ -40,15 +40,16 @@ service cloud.firestore {
       // A user can create their own booking.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
-      // A user can read THEIR OWN booking document, or any signed-in user (admin) can read any document.
-      // This is crucial for allowing the admin 'list' query to work.
+      // READS: A user can read their own document. For the admin panel, we
+      // also allow reads for any signed-in user. This is permissive for a prototype.
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || true);
       
-      // A list operation requires that the query constraints match the read permissions.
-      // A user query must filter by their UID. An admin query can list all.
+      // LISTS (Queries): Any signed-in user can perform a query.
+      // The query will only succeed if the 'read' rule above also passes for the
+      // documents returned. Because the read rule is permissive, this will allow the admin query.
       allow list: if isSignedIn();
       
-      // Only the user who owns the booking can modify it.
+      // UPDATES: Only the user who owns the booking can modify it.
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }

@@ -11,7 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format } from 'date-fns';
 import { Loader2 } from 'lucide-react';
@@ -20,9 +20,8 @@ export default function AdminBookingsPage() {
   const firestore = useFirestore();
 
   // Admin query - simplified to ensure it passes security rules.
-  // Complex queries with orderBy can sometimes be blocked if not perfectly indexed
-  // or if they conflict with 'list' vs 'read' permissions.
-  // Fetching without a specific order is more reliable for admin-level "list all" functionality.
+  // Complex queries can sometimes be blocked. Fetching without a specific order
+  // is more reliable for admin-level "list all" functionality.
   const bookingsQuery = useMemoFirebase(() => 
     firestore ? query(collection(firestore, `bookings`)) : null, 
     [firestore]
@@ -56,8 +55,12 @@ export default function AdminBookingsPage() {
     }
     
     if (bookings && bookings.length > 0) {
-      // Sort client-side since we removed the orderBy from the query
-      const sortedBookings = [...bookings].sort((a, b) => b.startTime.toMillis() - a.startTime.toMillis());
+      // Sort client-side since we removed orderBy from the query for rule compatibility
+      const sortedBookings = [...bookings].sort((a, b) => {
+        const timeA = a.startTime?.toMillis() || 0;
+        const timeB = b.startTime?.toMillis() || 0;
+        return timeB - timeA;
+      });
 
       return sortedBookings.map((booking) => (
         <TableRow key={booking.id}>
