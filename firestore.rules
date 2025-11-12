@@ -40,14 +40,11 @@ service cloud.firestore {
 
     // BOOKINGS: This is a top-level collection for easier admin queries.
     // A user can create a booking if they are signed in and the booking's userId matches their own.
-    // Users can read their own bookings from this collection.
-    // Admins would have broader read access.
+    // For the admin panel, we need a way to list all bookings. For this prototype, any signed-in user can.
+    // In a production app, this would be locked down to an admin role.
     match /bookings/{bookingId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      // For the admin panel, we need a way to list all bookings.
-      // A more secure rule would check for an admin claim. For now, any signed-in user can list.
-      allow list: if isSignedIn(); 
+      allow read, list: if isSignedIn();
     }
   }
 }
