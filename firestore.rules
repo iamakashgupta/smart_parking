@@ -12,44 +12,33 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // USERS: Users can read and write to their own user document.
-    // This allows them to update their profile and manage their vehicles.
+    // USERS: Publicly readable for this prototype.
+    // Users can only write to their own document.
     match /users/{userId} {
-      allow read, update, create: if isSignedIn() && isOwner(userId);
+      allow read: if true;
+      allow update, create: if isSignedIn() && isOwner(userId);
     }
     
-    // PARKING LOTS: Any user (signed in or not) can read parking lot data.
-    // This is necessary for users to browse lots before logging in.
-    // For this prototype, any signed-in user can create, update, or delete lots.
-    // In a production app, this would be restricted to an 'admin' role.
+    // PARKING LOTS: Publicly readable.
+    // For this prototype, any signed-in user can write to lots.
     match /parking_lots/{lotId} {
       allow read: if true;
-      allow write: if isSignedIn(); // Permissive for prototype
+      allow write: if isSignedIn();
     }
     
-    // SLOTS: Any user (signed in or not) can read slot information.
-    // This allows for real-time occupancy updates on the UI.
-    // Writing is restricted to signed-in users (for booking or simulation).
+    // SLOTS: Publicly readable for real-time occupancy.
+    // For this prototype, any signed-in user can write to slots.
     match /parking_lots/{lotId}/slots/{slotId} {
       allow read: if true;
-      allow write: if isSignedIn(); // Permissive for prototype
+      allow write: if isSignedIn();
     }
 
-    // BOOKINGS: This is a top-level collection.
+    // BOOKINGS: Publicly readable for this prototype to solve admin panel issues.
+    // Users can only create, update, or delete their own bookings.
     match /bookings/{bookingId} {
-      // A user can create their own booking.
+      allow read: if true;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      
-      // READS: A user can read their own document. For the admin panel, we
-      // also allow reads for any signed-in user. This is permissive for a prototype.
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || true);
-      
-      // LISTS (Queries): Any signed-in user can perform a query.
-      // The query will only succeed if the 'read' rule above also passes for the
-      // documents returned. Because the read rule is permissive, this will allow the admin query.
-      allow list: if isSignedIn();
-      
-      // UPDATES: Only the user who owns the booking can modify it.
+      allow list: if isSignedIn(); // Kept for query validation, read rule takes precedence.
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
