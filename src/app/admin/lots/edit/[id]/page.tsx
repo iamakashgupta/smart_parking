@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useDoc, useFirestore } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, setDoc, addDoc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
@@ -42,7 +42,11 @@ export default function LotEditPage() {
   const isNewLot = id === 'new';
 
   const firestore = useFirestore();
-  const lotDocRef = !isNewLot ? doc(firestore, 'parking_lots', id) : null;
+  const lotDocRef = useMemoFirebase(() => {
+    if (!firestore || isNewLot) return null;
+    return doc(firestore, 'parking_lots', id);
+  }, [firestore, id, isNewLot]);
+  
   const { data: lot, isLoading: isLoadingLot } = useDoc<ParkingLot>(lotDocRef);
   
   const [isSaving, setIsSaving] = useState(false);
