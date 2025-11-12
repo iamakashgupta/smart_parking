@@ -28,10 +28,10 @@ export default function AdminSimulatorPage() {
   const [selectedLotId, setSelectedLotId] = useState<string | undefined>();
   const [selectedSlotId, setSelectedSlotId] = useState<string | undefined>();
   
-  const slotsQuery = useMemoFirebase(() => selectedLotId ? query(collection(firestore, `parking_lots/${selectedLotId}/slots`)) : null, [firestore, selectedLotId]);
+  const slotsQuery = useMemoFirebase(() => firestore && selectedLotId ? query(collection(firestore, `parking_lots/${selectedLotId}/slots`)) : null, [firestore, selectedLotId]);
   const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
 
-  const slotDocRef = useMemoFirebase(() => selectedLotId && selectedSlotId ? doc(firestore, `parking_lots/${selectedLotId}/slots/${selectedSlotId}`) : null, [firestore, selectedLotId, selectedSlotId]);
+  const slotDocRef = useMemoFirebase(() => firestore && selectedLotId && selectedSlotId ? doc(firestore, `parking_lots/${selectedLotId}/slots/${selectedSlotId}`) : null, [firestore, selectedLotId, selectedSlotId]);
   const { data: selectedSlot, isLoading: isLoadingSlot } = useDoc<ParkingSlot>(slotDocRef);
 
   useEffect(() => {

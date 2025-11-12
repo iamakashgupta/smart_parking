@@ -22,7 +22,6 @@ export default function AdminDashboardPage() {
 
   // Queries
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
-  // Use collectionGroup to query all bookings across all users (for admin purposes)
   const allBookingsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings')) : null, [firestore]);
   const activeBookingsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings'), where('status', '==', 'Active')) : null, [firestore]);
   const recentActivityQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4)) : null, [firestore]);
