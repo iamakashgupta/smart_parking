@@ -24,6 +24,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { ParkingLot } from '@/lib/types';
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 
 export default function AdminLotsPage() {
   const firestore = useFirestore();
@@ -56,9 +57,11 @@ export default function AdminLotsPage() {
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add New Lot
+            <Button asChild>
+              <Link href="/admin/lots/edit/new">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add New Lot
+              </Link>
             </Button>
         </div>
       </PageHeader>
@@ -111,7 +114,9 @@ export default function AdminLotsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Edit Lot Details</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/admin/lots/edit/${lot.id}`}>Edit Lot Details</Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem>Manage Slots</DropdownMenuItem>
                       <DropdownMenuItem>Set Pricing</DropdownMenuItem>
                        <DropdownMenuItem className="text-destructive">Delete Lot</DropdownMenuItem>

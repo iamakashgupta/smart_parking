@@ -39,6 +39,7 @@ export type ParkingLot = {
   // Live data, not stored in Firestore directly for the lot
   availableSlots?: number; 
   slots?: ParkingSlot[];
+  createdAt?: Timestamp;
 };
 
 export type ParkingSlot = {

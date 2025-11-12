@@ -33,6 +33,13 @@ const menuItems = [
 export function AdminSidebar() {
   const pathname = usePathname();
   
+  const isActive = (href: string) => {
+    if (href === '/admin/lots') {
+      return pathname.startsWith('/admin/lots');
+    }
+    return pathname === href;
+  }
+  
   return (
     <Sidebar>
       <SidebarHeader>
@@ -54,7 +61,7 @@ export function AdminSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={isActive(item.href)}
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>
