@@ -8,7 +8,8 @@ import {
   Users,
   BarChart3,
   Cpu,
-  LogOut
+  LogOut,
+  Settings
 } from 'lucide-react';
 import {
   Sidebar,
@@ -20,13 +21,12 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { Icons } from '@/components/icons';
+import { Separator } from '../ui/separator';
 
 const menuItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/lots', label: 'Lot Management', icon: ParkingSquare },
-  { href: '/admin/bookings', label: 'Bookings', icon: BookCopy },
-  { href: '/admin/users', label: 'User Management', icon: Users },
-  { href: '/admin/analytics', label: 'Revenue', icon: BarChart3 },
+  { href: '/admin/bookings', label: 'All Bookings', icon: BookCopy },
   { href: '/admin/simulator', label: 'IoT Simulator', icon: Cpu },
 ];
 
@@ -54,7 +54,7 @@ export function AdminSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin')}
+                isActive={pathname === item.href}
                 tooltip={{ children: item.label, side: 'right' }}
               >
                 <Link href={item.href}>
@@ -66,16 +66,17 @@ export function AdminSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter>
+       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+         <Separator className="my-2" />
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip={{ children: 'Exit Admin', side: 'right' }}>
-              <Link href="/dashboard">
-                <LogOut />
-                <span>Exit Admin</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+           <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip={{ children: 'Main Dashboard', side: 'right' }}>
+                <Link href="/dashboard">
+                  <LogOut />
+                  <span>Exit Admin</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
