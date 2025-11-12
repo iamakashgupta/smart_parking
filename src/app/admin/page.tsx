@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, ParkingCircle, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit, orderBy, collectionGroup } from 'firebase/firestore';
 import { ParkingLot, Booking } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -22,10 +22,10 @@ export default function AdminDashboardPage() {
 
   // Queries
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
-  const allBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings')) : null, [firestore]); // Note: This is not scalable for a real app.
-                                                                    // For a real app, you'd aggregate this data.
-  const activeBookingsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), where('status', '==', 'Active')) : null, [firestore]);
-  const recentActivityQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4)) : null, [firestore]);
+  // Use collectionGroup to query all bookings across all users (for admin purposes)
+  const allBookingsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings')) : null, [firestore]);
+  const activeBookingsQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings'), where('status', '==', 'Active')) : null, [firestore]);
+  const recentActivityQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'bookings'), orderBy('startTime', 'desc'), limit(4)) : null, [firestore]);
   
   // Hooks
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
@@ -84,7 +84,7 @@ export default function AdminDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{occupancyPercentage.toFixed(1)}%</div>
-              <Progress value={occupancyPercentage} className="mt-2 h-2" />
+              <Progress value={occupancyPercentage} className="h-2 mt-2" />
             </CardContent>
           </Card>
         </div>
