@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Calendar as CalendarIcon, Clock, Car } from 'lucide-react';
 import { format, addHours, differenceInHours } from 'date-fns';
-import { Timestamp, addDoc, collection, doc } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -63,28 +63,31 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     if (startDateTime >= endDateTime) return 0;
     
     const hours = differenceInHours(endDateTime, startDateTime);
-    return hours * lot.rates.perHour;
+    return Math.max(1, hours) * lot.rates.perHour;
   }, [date, startTime, endTime, lot.rates.perHour]);
 
   const handleCreateBooking = async (isReservation: boolean) => {
-    if (!user || !date || !selectedVehicleId) {
+    if (!user || !date || !selectedVehicleId || !firestore) {
         toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a vehicle, date, and time.' });
         return;
     }
 
+    setIsSubmitting(true);
+
     const availableSlot = lot.slots.find(s => !s.isOccupied);
     if (!availableSlot) {
         toast({ variant: 'destructive', title: 'No Slots Available', description: 'This parking lot is currently full.' });
+        setIsSubmitting(false);
         return;
     }
 
     const selectedVehicle = vehicles.find(v => v.id === selectedVehicleId);
     if (!selectedVehicle) {
         toast({ variant: 'destructive', title: 'Vehicle not found.' });
+        setIsSubmitting(false);
         return;
     }
 
-    setIsSubmitting(true);
 
     try {
         const start = new Date();
@@ -98,14 +101,18 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
             vehicleReg: selectedVehicle.registrationNumber,
             startTime: isReservation ? Timestamp.fromDate(new Date(`${format(date, 'MM/dd/yyyy')} ${startTime}`)) : Timestamp.fromDate(start),
             endTime: isReservation ? Timestamp.fromDate(new Date(`${format(date, 'MM/dd/yyyy')} ${endTime}`)) : Timestamp.fromDate(end),
-            status: 'Confirmed',
-            totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2,
+            status: isReservation ? 'Confirmed' : 'Active',
+            totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2, // Dummy cost for now
         };
         
-        if (!firestore) throw new Error("Firestore not initialized");
+        const bookingsCollection = collection(firestore, `users/${user.uid}/bookings`);
+        const bookingDocRef = await addDoc(bookingsCollection, bookingData);
 
-        const docRef = await addDoc(collection(firestore, `users/${user.uid}/bookings`), bookingData);
-        onBookingSuccess(docRef.id);
+        // Mark the slot as occupied
+        const slotDocRef = doc(firestore, `parking_lots/${lot.id}/slots/${availableSlot.id}`);
+        await updateDoc(slotDocRef, { isOccupied: true });
+
+        onBookingSuccess(bookingDocRef.id);
         toast({ title: 'Booking Successful!', description: 'Your spot is confirmed.' });
     } catch (error) {
         console.error("Error creating booking:", error);

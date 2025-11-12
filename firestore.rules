@@ -19,8 +19,7 @@
  * - User data is strictly controlled by user-ownership enforced via path-based rules.
  * - Parking lot and slot data is publicly readable to facilitate real-time updates.
  * - Listing of parking lots and slots is allowed, as this data is considered public.
- * - Administrative collections (transactions, pricing, logs) are not accessible in this prototype.
- * - A basic admin role is simulated by allowing any authenticated user to list all bookings.
+ * - A basic admin role is simulated by allowing any authenticated user to create/update lots and list all bookings.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -48,20 +47,14 @@ service cloud.firestore {
 
       allow get, update, delete: if isOwner();
       allow list: if false; // User listing is not permitted.
-      allow create: if isSignedIn() && isOwner() && request.resource.data.id == userId;
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
     }
 
     /**
-     * @description Enforces user-ownership for vehicles.
-     * @path /users/{userId}/vehicles/{vehicleId}
+     * @description Enforces user-ownership for vehicles within the user's document.
+     * This is covered by the rule on /users/{userId}.
      */
-    match /users/{userId}/vehicles/{vehicleId} {
-      function isOwner() {
-        return request.auth.uid == userId;
-      }
-      allow read, write: if isOwner();
-    }
-    
+
     /**
      * @description Enforces ownership for bookings, but allows admins to list all.
      * @path /users/{userId}/bookings/{bookingId}
@@ -71,55 +64,48 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
       
-      // Collection group query for admins
-      allow list: if isAdmin();
-      
-      // Document specific rules
+      // Allow user to manage their own bookings
       allow get, write: if isOwner();
     }
 
+    // Collection group query for admins to list all bookings across all users.
+    match /{path=**}/bookings/{bookingId} {
+      allow list: if isAdmin();
+    }
+
     /**
-     * @description Allows public read access to parking lot information.
+     * @description Allows public read access to parking lot information, admin write.
      * @path /parking_lots/{parkingLotId}
      */
     match /parking_lots/{parkingLotId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete: if isAdmin(); // Anyone signed in can manage lots for now
     }
 
     /**
-     * @description Allows public read access to slot information.
+     * @description Allows public read access to slot information, admin write.
      * @path /parking_lots/{parkingLotId}/slots/{slotId}
      */
     match /parking_lots/{parkingLotId}/slots/{slotId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Restricts access to receipts.
-     * @path /receipts/{receiptId}
-     */
-    match /receipts/{receiptId} {
-       // Allow read if user is owner (requires checking booking doc) or an admin
-       allow get: if isSignedIn(); // Simplified for now
-       allow list, write: if false;
+      allow create, update, delete: if isAdmin(); // Anyone signed in can manage slots for now
     }
 
     /**
      * @description Admin-only collections.
-     * @paths /transactions, /pricing, /logs
+     * @paths /receipts, /transactions, /pricing, /logs
      */
+    match /receipts/{receiptId} {
+       allow read, write: if false; // Not implemented
+    }
     match /transactions/{transactionId} {
-      allow read, write: if isAdmin();
+      allow read, write: if false; // Not implemented
     }
-
     match /pricing/{pricingId} {
-      allow read, write: if isAdmin();
+      allow read, write: if false; // Not implemented
     }
-
     match /logs/{logId} {
-      allow read, write: if isAdmin();
+      allow read, write: if false; // Not implemented
     }
   }
 }

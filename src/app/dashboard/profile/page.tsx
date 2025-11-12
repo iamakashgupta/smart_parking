@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { Car, Trash2, PlusCircle, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, Vehicle } from '@/lib/types';
@@ -25,6 +25,14 @@ import {
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 
 const vehicleSchema = z.object({
   make: z.string().min(1, 'Make is required'),
@@ -47,8 +55,14 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<VehicleFormData>({
-    resolver: zodResolver(vehicleSchema)
+  const { register, handleSubmit, reset, setValue } = useForm<VehicleFormData>({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues: {
+      make: '',
+      model: '',
+      registrationNumber: '',
+      type: 'Regular',
+    }
   });
 
   useEffect(() => {
@@ -62,7 +76,7 @@ export default function ProfilePage() {
     if (!userDocRef) return;
     setIsSaving(true);
     try {
-      await updateDoc(userDocRef, { name, phone });
+      await setDoc(userDocRef, { name, phone }, { merge: true });
       toast({ title: 'Profile Updated', description: 'Your changes have been saved.' });
     } catch (error) {
       console.error(error);
@@ -99,7 +113,7 @@ export default function ProfilePage() {
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
-    return name.split(' ').map((n) => n[0]).join('');
+    return name.split(' ').map((n) => n[0]).join('').toUpperCase();
   }
   
   if (isUserLoading || (user && isUserDataLoading)) {
@@ -122,7 +136,7 @@ export default function ProfilePage() {
             <CardHeader className="items-center text-center">
               <Avatar className="w-24 h-24 mb-2">
                 <AvatarImage src={user.photoURL || undefined} alt={user.displayName || ''} />
-                <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                <AvatarFallback>{getInitials(userData?.name || user.displayName)}</AvatarFallback>
               </Avatar>
               <CardTitle className="text-2xl">{userData?.name || user.displayName}</CardTitle>
               <CardDescription>{user.email}</CardDescription>
@@ -195,31 +209,32 @@ export default function ProfilePage() {
                             <DialogTitle>Add a New Vehicle</DialogTitle>
                             <DialogDescription>Enter your vehicle's details.</DialogDescription>
                         </DialogHeader>
-                        <form onSubmit={handleSubmit(handleAddVehicle)} className="space-y-4">
+                        <form onSubmit={handleSubmit(handleAddVehicle)} className="space-y-4 pt-4">
                            <div className="grid gap-2">
                                 <Label htmlFor="make">Make (e.g., Maruti, Tata)</Label>
                                 <Input id="make" {...register('make')} />
-                                {errors.make && <p className="text-destructive text-sm">{errors.make.message}</p>}
                            </div>
                            <div className="grid gap-2">
                                 <Label htmlFor="model">Model (e.g., Swift, Nexon)</Label>
                                 <Input id="model" {...register('model')} />
-                                {errors.model && <p className="text-destructive text-sm">{errors.model.message}</p>}
                            </div>
                            <div className="grid gap-2">
                                 <Label htmlFor="registrationNumber">Registration Number</Label>
                                 <Input id="registrationNumber" {...register('registrationNumber')} />
-                                {errors.registrationNumber && <p className="text-destructive text-sm">{errors.registrationNumber.message}</p>}
                            </div>
                            <div className="grid gap-2">
                                 <Label htmlFor="type">Vehicle Type</Label>
-                                <select id="type" {...register('type')} className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
-                                    <option value="Regular">Regular</option>
-                                    <option value="Compact">Compact</option>
-                                    <option value="Large">Large</option>
-                                    <option value="EV">EV</option>
-                                </select>
-                                {errors.type && <p className="text-destructive text-sm">{errors.type.message}</p>}
+                                <Select onValueChange={(value) => setValue('type', value as 'Compact' | 'Regular' | 'Large' | 'EV')} defaultValue='Regular'>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select vehicle type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Regular">Regular</SelectItem>
+                                        <SelectItem value="Compact">Compact</SelectItem>
+                                        <SelectItem value="Large">Large</SelectItem>
+                                        <SelectItem value="EV">EV</SelectItem>
+                                    </SelectContent>
+                                </Select>
                            </div>
                            <DialogFooter>
                                <Button type="submit">Add Vehicle</Button>

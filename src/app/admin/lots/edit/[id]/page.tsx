@@ -12,12 +12,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDoc, useFirestore } from '@/firebase';
-import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, addDoc, collection, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import Link from 'next/link';
 import { ParkingLot, SlotType } from '@/lib/types';
-import { SLOTS_PER_LEVEL } from '@/lib/constants';
 
 const slotTypes: SlotType[] = ['Compact', 'Regular', 'Large', 'EV', 'Disabled'];
 
@@ -51,13 +50,13 @@ export default function LotEditPage() {
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<LotFormData>({
     resolver: zodResolver(lotFormSchema),
     defaultValues: {
-      name: '',
-      address: '',
-      totalSlots: 100,
-      rates: { perHour: 50, perDay: 300 },
+      name: 'Cyber City Parkade',
+      address: 'Sector 24, Gurugram, Haryana',
+      totalSlots: 150,
+      rates: { perHour: 80, perDay: 500 },
       operatingHours: '24/7',
-      slotTypes: ['Regular', 'EV'],
-      distance: '0 km',
+      slotTypes: ['Regular', 'EV', 'Compact'],
+      distance: '2.5 km',
     }
   });
 
@@ -83,24 +82,33 @@ export default function LotEditPage() {
     
     try {
       if (isNewLot) {
-        const newLotRef = await addDoc(collection(firestore, 'parking_lots'), {
+        const newLotData = {
           ...data,
-          images: [`https://picsum.photos/seed/${Date.now()}/800/600`], // Placeholder image
-          location: { lat: 0, lng: 0 }, // Placeholder location
+          images: [
+            `https://picsum.photos/seed/${Date.now()}/800/600`,
+            `https://picsum.photos/seed/${Date.now() + 1}/800/600`
+          ],
+          location: { lat: 28.496, lng: 77.088 }, // Gurugram location
           createdAt: serverTimestamp(),
-        });
+          availableSlots: data.totalSlots, // Initially all slots are available
+        };
 
-        // Batch create slots
-        const slotsCollection = collection(firestore, `parking_lots/${newLotRef.id}/slots`);
+        const newLotRef = await addDoc(collection(firestore, 'parking_lots'), newLotData);
+
+        // Batch create slots for the new lot
+        const batch = writeBatch(firestore);
         for (let i = 0; i < data.totalSlots; i++) {
           const slotType = data.slotTypes[i % data.slotTypes.length] as SlotType;
-          await addDoc(slotsCollection, {
+          const slotRef = doc(collection(firestore, `parking_lots/${newLotRef.id}/slots`));
+          batch.set(slotRef, {
             lotId: newLotRef.id,
-            level: Math.floor(i / SLOTS_PER_LEVEL) + 1,
+            level: Math.floor(i / 50) + 1, // Using a constant for slots per level
             type: slotType,
             isOccupied: false,
           });
         }
+        await batch.commit();
+
         toast({ title: 'Lot Created', description: `"${data.name}" has been added.` });
         router.push('/admin/lots');
       } else {
