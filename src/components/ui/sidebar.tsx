@@ -149,17 +149,11 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent
-            data-sidebar="sidebar"
-            data-mobile="true"
-            className="w-[--sidebar-width] bg-card p-0 text-card-foreground [&>button]:hidden"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
             side={side}
+            className={cn("w-[var(--sidebar-width-mobile)] p-0", className)}
+            style={{ "--sidebar-width-mobile": SIDEBAR_WIDTH_MOBILE } as React.CSSProperties}
           >
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
@@ -170,9 +164,10 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className={cn("group/sidebar peer hidden h-svh text-card-foreground md:block", className)}
+        className={cn("group/sidebar hidden h-svh text-card-foreground md:block", className)}
         data-state={state}
         data-side={side}
+        {...props}
       >
         <div
           className={cn(
@@ -180,7 +175,6 @@ const Sidebar = React.forwardRef<
             "group-data-[state=collapsed]/sidebar:w-[var(--sidebar-width-icon)]",
             side === "left" ? "left-0" : "right-0"
           )}
-          {...props}
         >
           {children}
         </div>
@@ -221,15 +215,14 @@ const SidebarInset = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
+    const { state } = useSidebar();
   return (
     <main
       ref={ref}
       className={cn(
         "flex min-h-svh flex-1 flex-col bg-background transition-[margin-left] duration-200 ease-in-out",
-        "md:peer-data-[side=left]:peer-data-[state=expanded]/sidebar:ml-[var(--sidebar-width)]",
-        "md:peer-data-[side=left]:peer-data-[state=collapsed]/sidebar:ml-[var(--sidebar-width-icon)]",
-        "md:peer-data-[side=right]:peer-data-[state=expanded]/sidebar:mr-[var(--sidebar-width)]",
-        "md:peer-data-[side=right]:peer-data-[state=collapsed]/sidebar:mr-[var(--sidebar-width-icon)]",
+        "md:ml-[var(--sidebar-width-icon)]",
+        state === 'expanded' && "md:ml-[var(--sidebar-width)]",
         className
       )}
       {...props}
