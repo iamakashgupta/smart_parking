@@ -15,7 +15,6 @@ import { Users, ParkingCircle, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy, collectionGroup } from 'firebase/firestore';
 import { ParkingLot, Booking } from '@/lib/types';
-import { format } from 'date-fns';
 
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
