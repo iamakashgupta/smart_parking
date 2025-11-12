@@ -30,12 +30,6 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // For this prototype, any authenticated user is considered an admin.
-    // In a real app, this would check for a custom claim: request.auth.token.admin == true
-    function isAdmin() {
-      return isSignedIn();
-    }
-
     /**
      * @description Enforces user-ownership for user profiles.
      * @path /users/{userId}
@@ -49,11 +43,6 @@ service cloud.firestore {
       allow list: if false; // User listing is not permitted.
       allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
     }
-
-    /**
-     * @description Enforces user-ownership for vehicles within the user's document.
-     * This is covered by the rule on /users/{userId}.
-     */
 
     /**
      * @description Enforces ownership for bookings, but allows admins to list all.
@@ -70,25 +59,23 @@ service cloud.firestore {
 
     // Collection group query for admins to list all bookings across all users.
     match /{path=**}/bookings/{bookingId} {
-      allow list: if isAdmin();
+      allow list: if isSignedIn();
     }
 
     /**
-     * @description Allows public read access to parking lot information, admin write.
+     * @description Allows public read/write access to parking lot information.
      * @path /parking_lots/{parkingLotId}
      */
     match /parking_lots/{parkingLotId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin(); // Anyone signed in can manage lots for now
+      allow read, write: if true;
     }
 
     /**
-     * @description Allows public read access to slot information, admin write.
+     * @description Allows public read/write access to slot information.
      * @path /parking_lots/{parkingLotId}/slots/{slotId}
      */
     match /parking_lots/{parkingLotId}/slots/{slotId} {
-      allow get, list: if true;
-      allow create, update, delete: if isAdmin(); // Anyone signed in can manage slots for now
+      allow read, write: if true;
     }
 
     /**

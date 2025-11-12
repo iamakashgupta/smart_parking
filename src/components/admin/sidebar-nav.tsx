@@ -5,11 +5,7 @@ import {
   LayoutDashboard,
   ParkingSquare,
   BookCopy,
-  Users,
-  BarChart3,
   Cpu,
-  LogOut,
-  Settings
 } from 'lucide-react';
 import {
   Sidebar,
@@ -73,19 +69,6 @@ export function AdminSidebar() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-       <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-         <Separator className="my-2" />
-        <SidebarMenu>
-           <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{ children: 'Main Dashboard', side: 'right' }}>
-                <Link href="/dashboard">
-                  <LogOut />
-                  <span>Exit Admin</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }
