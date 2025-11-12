@@ -64,9 +64,18 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
     setIsLoading(true);
     try {
       if (authType === 'signup') {
+        if (!data.name) {
+            toast({
+                variant: 'destructive',
+                title: 'Name is required for sign up.',
+            });
+            setIsLoading(false);
+            return;
+        }
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         const user = userCredential.user;
         await updateProfile(user, { displayName: data.name });
+        // Create user document in Firestore
         await setDoc(doc(firestore, 'users', user.uid), {
           id: user.uid,
           name: data.name,
@@ -77,6 +86,10 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
       } else {
         await signInWithEmailAndPassword(auth, data.email, data.password);
       }
+      toast({
+        title: authType === 'signup' ? 'Account Created' : 'Logged In',
+        description: "You've successfully signed in.",
+      });
       router.push('/dashboard');
     } catch (error: any) {
       toast({
@@ -105,6 +118,10 @@ export function UserAuthForm({ className, authType, ...props }: UserAuthFormProp
         vehicles: []
       }, { merge: true }); // Merge to avoid overwriting existing vehicles etc.
 
+      toast({
+        title: 'Logged In with Google',
+        description: "You've successfully signed in.",
+      });
       router.push('/dashboard');
     } catch (error: any) {
       toast({

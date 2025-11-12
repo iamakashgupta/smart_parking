@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Map,
+  BookCopy,
+  User,
   LifeBuoy,
   Settings,
 } from 'lucide-react';
@@ -18,14 +20,18 @@ import {
 } from '@/components/ui/sidebar';
 import { Icons } from '@/components/icons';
 import { Separator } from '@/components/ui/separator';
+import { useUser } from '@/firebase';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/lots', label: 'Find Parking', icon: Map },
+  { href: '/dashboard/bookings', label: 'My Bookings', icon: BookCopy },
+  { href: '/dashboard/profile', label: 'Profile', icon: User },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
   
   return (
     <Sidebar>

@@ -4,17 +4,24 @@ import { MapView } from '@/components/map-view';
 import { LotCard } from '@/components/parking/lot-card';
 import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { ParkingLot } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function DashboardHomePage() {
   const firestore = useFirestore();
+  const { user, isLoading: isUserLoading } = useUser();
 
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
   const { data: lots, isLoading: isLoadingLots } = useCollection<ParkingLot>(lotsQuery);
 
   const WelcomeMessage = () => {
+    if (isUserLoading) {
+      return <Skeleton className="h-8 w-48" />;
+    }
+    if (user) {
+      return `Welcome back, ${user.displayName || 'User'}!`;
+    }
     return `Welcome to SmartPark!`;
   }
 

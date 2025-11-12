@@ -43,7 +43,7 @@ const vehicleSchema = z.object({
 type VehicleFormData = z.infer<typeof vehicleSchema>;
 
 export default function ProfilePage() {
-  const { user, isUserLoading } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
 
@@ -55,7 +55,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
 
-  const { register, handleSubmit, reset, setValue } = useForm<VehicleFormData>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       make: '',
@@ -69,8 +69,10 @@ export default function ProfilePage() {
     if (userData) {
       setName(userData.name || '');
       setPhone(userData.phone || '');
+    } else if (user) {
+      setName(user.displayName || '');
     }
-  }, [userData]);
+  }, [userData, user]);
 
   const handleSaveChanges = async () => {
     if (!userDocRef) return;
@@ -121,7 +123,7 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    return <div className="text-center">Please log in to view your profile.</div>;
+    return <div className="text-center p-8 bg-card rounded-lg shadow-sm">Please log in to view your profile.</div>;
   }
 
   return (
@@ -213,14 +215,17 @@ export default function ProfilePage() {
                            <div className="grid gap-2">
                                 <Label htmlFor="make">Make (e.g., Maruti, Tata)</Label>
                                 <Input id="make" {...register('make')} />
+                                {errors.make && <p className="text-sm text-destructive">{errors.make.message}</p>}
                            </div>
                            <div className="grid gap-2">
                                 <Label htmlFor="model">Model (e.g., Swift, Nexon)</Label>
                                 <Input id="model" {...register('model')} />
+                                {errors.model && <p className="text-sm text-destructive">{errors.model.message}</p>}
                            </div>
                            <div className="grid gap-2">
                                 <Label htmlFor="registrationNumber">Registration Number</Label>
                                 <Input id="registrationNumber" {...register('registrationNumber')} />
+                                {errors.registrationNumber && <p className="text-sm text-destructive">{errors.registrationNumber.message}</p>}
                            </div>
                            <div className="grid gap-2">
                                 <Label htmlFor="type">Vehicle Type</Label>
@@ -235,6 +240,7 @@ export default function ProfilePage() {
                                         <SelectItem value="EV">EV</SelectItem>
                                     </SelectContent>
                                 </Select>
+                                {errors.type && <p className="text-sm text-destructive">{errors.type.message}</p>}
                            </div>
                            <DialogFooter>
                                <Button type="submit">Add Vehicle</Button>

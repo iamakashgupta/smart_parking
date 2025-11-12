@@ -112,7 +112,4 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | 
   return memoized;
 }
 
-// useUser hook is being removed as authentication is no longer part of the app.
-// If you need user state in the future, you can re-introduce the onAuthStateChanged listener
-// and a modified useUser hook.
-export const useUser = () => ({ user: null, isLoading: false });
+export { useUser } from './auth/use-user';

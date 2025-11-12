@@ -1,8 +1,9 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Car } from 'lucide-react';
 import { format, addHours, differenceInHours } from 'date-fns';
 import { Timestamp, addDoc, collection, doc, updateDoc, setDoc } from 'firebase/firestore';
+import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -22,43 +23,39 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { ParkingLot, Vehicle, User } from '@/lib/types';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface BookingFormProps {
   lot: ParkingLot & { slots: any[] };
   onBookingSuccess: (bookingId: string) => void;
 }
 
-// Hardcoded user for anonymous booking
-const anonymousUserId = 'anonymousUser';
-const anonymousUser: User = {
-    id: anonymousUserId,
-    name: "Guest User",
-    email: "guest@example.com",
-    vehicles: [
-        { id: 'v_default_1', make: 'Maruti', model: 'Swift', registrationNumber: 'DL01AB1234', type: 'Regular' },
-        { id: 'v_default_2', make: 'Hyundai', model: 'Creta', registrationNumber: 'MH02CD5678', type: 'Regular' },
-        { id: 'v_default_3', make: 'Tata', model: 'Nexon EV', registrationNumber: 'KA03EV9101', type: 'EV' },
-    ]
-};
-
-
 export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
-
-  // We'll manage the user data in component state now
-  const [vehicles, setVehicles] = useState(anonymousUser.vehicles || []);
+  const { user, isLoading: isUserLoading } = useUser();
+  
+  const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
+  const { data: userData, isLoading: isUserDataLoading } = useDoc<User>(userDocRef);
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState<string>('09:00 AM');
   const [endTime, setEndTime] = useState<string>('11:00 AM');
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>(vehicles[0]?.id);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  const vehicles = userData?.vehicles || [];
+
+  useEffect(() => {
+    if (vehicles.length > 0 && !selectedVehicleId) {
+      setSelectedVehicleId(vehicles[0].id);
+    }
+  }, [vehicles, selectedVehicleId]);
+
   const timeSlots = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2);
     const minute = i % 2 === 0 ? '00' : '30';
@@ -78,7 +75,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   }, [date, startTime, endTime, lot.rates.perHour]);
 
   const handleCreateBooking = async (isReservation: boolean) => {
-    if (!date || !selectedVehicleId || !firestore) {
+    if (!date || !selectedVehicleId || !firestore || !user) {
         toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a vehicle, date, and time.' });
         return;
     }
@@ -104,7 +101,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
         const end = addHours(start, 2); // Dummy 2 hour booking for "Book Now"
 
         const bookingData = {
-            userId: anonymousUserId,
+            userId: user.uid,
             lotId: lot.id,
             lotName: lot.name,
             slotId: availableSlot.id,
@@ -115,9 +112,10 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
             totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2, // Dummy cost for now
         };
         
-        // Since we have a single anonymous user, we can create a top-level bookings collection
-        const bookingsCollection = collection(firestore, `bookings`);
+        const bookingsCollection = collection(firestore, `users/${user.uid}/bookings`);
         const bookingDocRef = await addDoc(bookingsCollection, bookingData);
+        await setDoc(doc(firestore, `users/${user.uid}/bookings`, bookingDocRef.id), { id: bookingDocRef.id }, { merge: true });
+
 
         // Mark the slot as occupied
         const slotDocRef = doc(firestore, `parking_lots/${lot.id}/slots/${availableSlot.id}`);
@@ -131,6 +129,34 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     } finally {
         setIsSubmitting(false);
     }
+  }
+  
+  if (isUserLoading || isUserDataLoading) {
+      return <Card className="shadow-lg flex items-center justify-center h-[500px]"><Loader2 className="h-8 w-8 animate-spin" /></Card>
+  }
+
+  if (!user) {
+    return (
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle>Login to Book</CardTitle>
+          <CardDescription>You need to be logged in to book a parking spot.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Authentication Required</AlertTitle>
+              <AlertDescription>
+                Please log in or create an account to proceed with your booking.
+              </AlertDescription>
+            </Alert>
+        </CardContent>
+        <CardFooter className="flex-col gap-2">
+           <Button className="w-full" asChild><Link href="/auth/login">Login</Link></Button>
+           <Button variant="outline" className="w-full" asChild><Link href="/auth/signup">Sign Up</Link></Button>
+        </CardFooter>
+      </Card>
+    )
   }
 
   return (
@@ -156,7 +182,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
                   <SelectContent>
                     {vehicles.length > 0 ? vehicles.map(v => (
                        <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.registrationNumber})</SelectItem>
-                    )) : <SelectItem value="none" disabled>No vehicles found.</SelectItem>}
+                    )) : <SelectItem value="none" disabled>No vehicles added. Please add one in your profile.</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -185,7 +211,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
                 <SelectContent>
                   {vehicles.length > 0 ? vehicles.map(v => (
                      <SelectItem key={v.id} value={v.id}>{v.make} {v.model} ({v.registrationNumber})</SelectItem>
-                  )) : <SelectItem value="none" disabled>No vehicles found.</SelectItem>}
+                  )) : <SelectItem value="none" disabled>No vehicles added. Please add one in your profile.</SelectItem>}
                 </SelectContent>
               </Select>
             </div>

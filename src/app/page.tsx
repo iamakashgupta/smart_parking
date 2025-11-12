@@ -37,9 +37,15 @@ export default function LandingPage() {
           </span>
         </Link>
         <nav className="flex items-center gap-4">
-          <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/dashboard">Explore App</Link>
-          </Button>
+           <Button variant="ghost" asChild>
+                <Link href="/dashboard">Dashboard</Link>
+            </Button>
+            <Button asChild>
+                <Link href="/auth/login">Login</Link>
+            </Button>
+            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Link href="/auth/signup">Sign Up</Link>
+            </Button>
         </nav>
       </header>
 

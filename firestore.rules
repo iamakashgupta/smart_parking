@@ -1,16 +1,53 @@
-/**
- * @file Firestore Security Rules
- * @description DEVELOPMENT-ONLY ruleset. This is completely insecure and allows
- *              all reads and writes. It is intended only for the initial
- *              prototyping phase to prevent permission errors.
- *              DO NOT USE IN PRODUCTION.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow all reads and writes to all collections.
+  
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Users: Can read/write their own profile.
+    match /users/{userId} {
+      allow read, update: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn();
+    }
+    
+    // User Vehicles: Can manage their own vehicles.
+    match /users/{userId}/vehicles/{vehicleId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+    
+    // User Bookings: Can manage their own bookings.
+    match /users/{userId}/bookings/{bookingId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+
+    // Parking Lots: Any signed-in user can read lot information.
+    // Writing to lots is restricted. For this prototype, we will allow any signed-in user to write.
+    match /parking_lots/{lotId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn(); // In production, this would be restricted to admins
+    }
+    
+    // Slots: Any signed-in user can read slot info for real-time updates.
+    // Writing to slots is restricted.
+    match /parking_lots/{lotId}/slots/{slotId} {
+      allow read: if isSignedIn();
+      // Allow updates (e.g. isOccupied) if the user is signed in.
+      // In production, this might be handled by a backend service or IoT device role.
+      allow update: if isSignedIn();
+      allow write: if isSignedIn(); // Allow creation for admins
+    }
+
+    // Default deny all other access
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
