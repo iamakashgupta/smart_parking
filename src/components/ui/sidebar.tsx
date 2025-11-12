@@ -170,16 +170,15 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group/sidebar peer hidden h-svh md:block text-card-foreground"
+        className={cn("group/sidebar peer hidden h-svh text-card-foreground md:block", className)}
         data-state={state}
         data-side={side}
       >
         <div
           className={cn(
-            "duration-200 fixed inset-y-0 z-40 hidden h-svh w-[var(--sidebar-width)] transition-[width] ease-in-out md:flex flex-col border-r",
+            "fixed inset-y-0 z-40 flex h-svh w-[var(--sidebar-width)] flex-col border-r transition-[width] duration-200 ease-in-out",
             "group-data-[state=collapsed]/sidebar:w-[var(--sidebar-width-icon)]",
-            side === "left" ? "left-0" : "right-0",
-            className
+            side === "left" ? "left-0" : "right-0"
           )}
           {...props}
         >
@@ -262,7 +261,7 @@ const SidebarFooter = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="footer"
-      className={cn("flex flex-col gap-2 p-3 mt-auto", className)}
+      className={cn("mt-auto flex flex-col gap-2 p-3", className)}
       {...props}
     />
   )
