@@ -20,7 +20,7 @@ export function LotCard({ lot }: LotCardProps) {
   const slotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `parking_lots/${lot.id}/slots`), where('isOccupied', '==', false)) : null, [firestore, lot.id]);
   const { data: availableSlots, isLoading } = useCollection(slotsQuery);
 
-  const availableCount = isLoading ? lot.availableSlots ?? 0 : availableSlots?.length ?? 0;
+  const availableCount = isLoading ? (lot.availableSlots ?? 0) : (availableSlots?.length ?? 0);
   const occupancy = lot.totalSlots > 0 ? ((lot.totalSlots - availableCount) / lot.totalSlots) * 100 : 0;
 
   return (
