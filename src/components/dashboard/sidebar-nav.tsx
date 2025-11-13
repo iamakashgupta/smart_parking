@@ -30,8 +30,13 @@ const menuItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   
+  if (isLoading) {
+    return null; // Or a loading skeleton for the sidebar
+  }
+  
+  // Only render the full sidebar if the user is logged in
   if (!user) {
     return null;
   }
