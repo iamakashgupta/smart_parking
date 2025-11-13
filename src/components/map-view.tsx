@@ -34,12 +34,12 @@ export function MapView({ lots, isLoading }: MapViewProps) {
   return (
     <Card className="w-full h-[400px] md:h-[500px] overflow-hidden rounded-lg shadow-lg relative">
         <Image
-          src="https://picsum.photos/seed/night-map/1280/720"
+          src="https://picsum.photos/seed/abstract-map/1280/720"
           alt="A stylized map of a city at night showing streets and locations"
           fill
           style={{objectFit: "cover"}}
           className="rounded-lg"
-          data-ai-hint="night city map"
+          data-ai-hint="abstract map"
         />
        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
        
