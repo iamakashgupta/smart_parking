@@ -17,6 +17,8 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const ADMIN_EMAIL = 'akash@gmail.com';
+
 export function UserNav() {
   const { user, isLoading } = useUser();
   const auth = useAuth();
@@ -77,9 +79,11 @@ export function UserNav() {
           <DropdownMenuItem asChild>
             <Link href="/dashboard/bookings">My Bookings</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/admin">Admin Panel</Link>
-          </DropdownMenuItem>
+          {user.email === ADMIN_EMAIL && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin">Admin Panel</Link>
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>

@@ -32,6 +32,8 @@ const menuItems = [
   { href: '/dashboard/profile', label: 'Profile', icon: User },
 ];
 
+const ADMIN_EMAIL = 'akash@gmail.com';
+
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { user, isLoading } = useUser();
@@ -111,7 +113,7 @@ export function DashboardSidebar() {
            </SidebarMenu>
         )}
       </SidebarContent>
-      {user && (
+      {user && user.email === ADMIN_EMAIL && (
         <SidebarFooter className="group-data-[collapsible=icon]:hidden">
           <Separator className="my-2" />
           <SidebarMenu>
