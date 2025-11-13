@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format } from 'date-fns';
 import { MoreHorizontal, Loader2 } from 'lucide-react';
@@ -30,7 +30,8 @@ export default function MyBookingsPage() {
 
   const bookingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'bookings'), where('userId', '==', user.uid), orderBy('startTime', 'desc'));
+    // Removed orderBy to prevent complex query issues with security rules
+    return query(collection(firestore, 'bookings'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
   const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
@@ -72,7 +73,14 @@ export default function MyBookingsPage() {
     }
     
     if (bookings && bookings.length > 0) {
-      return bookings.map((booking) => (
+      // Sort client-side
+      const sortedBookings = [...bookings].sort((a, b) => {
+        const timeA = a.startTime?.toMillis() || 0;
+        const timeB = b.startTime?.toMillis() || 0;
+        return timeB - timeA;
+      });
+
+      return sortedBookings.map((booking) => (
         <TableRow key={booking.id}>
           <TableCell>
             <div className="font-medium">{booking.lotName}</div>

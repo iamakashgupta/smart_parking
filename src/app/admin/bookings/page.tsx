@@ -19,8 +19,6 @@ import { Loader2 } from 'lucide-react';
 export default function AdminBookingsPage() {
   const firestore = useFirestore();
 
-  // Admin query - simplified to ensure it passes security rules.
-  // The query is memoized to prevent re-renders and infinite loops.
   const bookingsQuery = useMemoFirebase(() => 
     firestore ? query(collection(firestore, `bookings`)) : null, 
     [firestore]
@@ -54,7 +52,6 @@ export default function AdminBookingsPage() {
     }
     
     if (bookings && bookings.length > 0) {
-      // Sort client-side since we removed orderBy from the query for rule compatibility
       const sortedBookings = [...bookings].sort((a, b) => {
         const timeA = a.startTime?.toMillis() || 0;
         const timeB = b.startTime?.toMillis() || 0;
