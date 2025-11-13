@@ -102,10 +102,10 @@ export default function AdminDashboardPage() {
                      <TableRow key={activity.id}>
                         <TableCell className="truncate text-xs max-w-[100px]">{activity.userId}</TableCell>
                         <TableCell>{activity.lotName}</TableCell>
-                         <TableCell>{format(activity.startTime.toDate(), 'h:mm a')}</TableCell>
+                         <TableCell>{activity.startTime ? format(activity.startTime.toDate(), 'h:mm a') : 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant={activity.status === 'Active' ? 'default' : 'secondary'}>
-                            {activity.status === 'Active' ? 'Check-in' : activity.status}
+                            {activity.status}
                           </Badge>
                         </TableCell>
                   </TableRow>
