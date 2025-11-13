@@ -6,15 +6,19 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Users, ParkingCircle, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit, orderBy } from 'firebase/firestore';
-import { ParkingLot, Booking } from '@/lib/types';
+import { collection, query, where, limit, orderBy, getDocs } from 'firebase/firestore';
+import { ParkingLot, Booking, ParkingSlot } from '@/lib/types';
 import { format, subDays, startOfDay } from 'date-fns';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
+
+  // State to hold all slots from all lots
+  const [allSlots, setAllSlots] = useState<ParkingSlot[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(true);
 
   // Queries
   const lotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'parking_lots')) : null, [firestore]);
@@ -27,17 +31,44 @@ export default function AdminDashboardPage() {
   const { data: allBookings, isLoading: isLoadingAllBookings } = useCollection<Booking>(allBookingsQuery);
   const { data: activeBookings, isLoading: isLoadingActive } = useCollection<Booking>(activeBookingsQuery);
   const { data: recentActivity, isLoading: isLoadingRecent } = useCollection<Booking>(recentActivityQuery);
+  
+  // Effect to fetch all slots from all lots
+  useEffect(() => {
+    if (!firestore || !lots) return;
+
+    const fetchAllSlots = async () => {
+      setIsLoadingSlots(true);
+      const slotsPromises = lots.map(lot => getDocs(collection(firestore, `parking_lots/${lot.id}/slots`)));
+      const lotsSlotsSnapshots = await Promise.all(slotsPromises);
+      
+      const allSlotsData = lotsSlotsSnapshots.flatMap(snapshot => 
+        snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ParkingSlot))
+      );
+
+      setAllSlots(allSlotsData);
+      setIsLoadingSlots(false);
+    };
+
+    if (lots.length > 0) {
+      fetchAllSlots();
+    } else {
+      setIsLoadingSlots(false);
+    }
+  }, [firestore, lots]);
+
 
   // Calculations
   const totalRevenue = allBookings?.filter(b => b.status === 'Completed').reduce((sum, b) => sum + (b.totalCost || 0), 0) ?? 0;
   const activeBookingsCount = activeBookings?.length ?? 0;
   
-  const { totalOccupancy, totalSlots } = lots?.reduce((acc, lot) => {
-    const occupied = lot.totalSlots - (lot.availableSlots ?? 0);
-    acc.totalOccupancy += occupied;
-    acc.totalSlots += lot.totalSlots;
-    return acc;
-  }, { totalOccupancy: 0, totalSlots: 0 }) || { totalOccupancy: 0, totalSlots: 0 };
+  const { totalOccupancy, totalSlots } = useMemo(() => {
+    if (!lots || isLoadingSlots) return { totalOccupancy: 0, totalSlots: 0 };
+    
+    const totalSystemSlots = lots.reduce((sum, lot) => sum + lot.totalSlots, 0);
+    const occupiedSlots = allSlots.filter(slot => slot.isOccupied).length;
+
+    return { totalOccupancy: occupiedSlots, totalSlots: totalSystemSlots };
+  }, [lots, allSlots, isLoadingSlots]);
   
   const occupancyPercentage = totalSlots > 0 ? (totalOccupancy / totalSlots) * 100 : 0;
 
@@ -65,7 +96,7 @@ export default function AdminDashboardPage() {
     },
   };
   
-  const isLoading = isLoadingLots || isLoadingAllBookings || isLoadingActive || isLoadingRecent;
+  const isLoading = isLoadingLots || isLoadingAllBookings || isLoadingActive || isLoadingRecent || isLoadingSlots;
 
   return (
     <div className="container mx-auto px-0">
