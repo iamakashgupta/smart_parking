@@ -11,7 +11,7 @@ interface FirebaseClientProviderProps {
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
   const firebaseServices = useMemo(() => {
     if (typeof window === 'undefined') {
-        return { firebaseApp: null, auth: null, firestore: null };
+        return { firebaseApp: null, auth: null, firestore: null, storage: null };
     }
     return initializeFirebase();
   }, []); 
@@ -21,6 +21,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
       firebaseApp={firebaseServices.firebaseApp}
       auth={firebaseServices.auth}
       firestore={firebaseServices.firestore}
+      storage={firebaseServices.storage}
     >
       {children}
     </FirebaseProvider>

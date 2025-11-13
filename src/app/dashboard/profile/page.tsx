@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { Car, Trash2, PlusCircle, Loader2 } from 'lucide-react';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateProfile } from 'firebase/auth';
+import { Car, Trash2, PlusCircle, Loader2, Upload } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, Vehicle } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +48,7 @@ export default function ProfilePage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<User>(userDocRef);
@@ -53,6 +56,7 @@ export default function ProfilePage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
 
   const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<VehicleFormData>({
@@ -117,9 +121,41 @@ export default function ProfilePage() {
       }
   }
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, `profile-photos/${user.uid}/${file.name}`);
+      const snapshot = await uploadBytes(storageRef, file);
+      const photoURL = await getDownloadURL(snapshot.ref);
+
+      await updateProfile(user, { photoURL });
+      if (userDocRef) {
+          await updateDoc(userDocRef, { photoURL });
+      }
+
+      toast({ title: 'Photo Updated', description: 'Your new profile picture has been saved.' });
+      // Force a reload of the user object to see the change
+      await user.reload();
+      // This is a bit of a hack to force re-render with new photoURL
+      setName(name + " "); setName(name);
+
+
+    } catch (error) {
+      console.error('Photo upload failed:', error);
+      toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload your new photo.' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
-    return name.split(' ').map((n) => n[0]).join('').toUpperCase();
+    return name.trim().split(' ').map((n) => n[0]).join('').toUpperCase();
   }
   
   if (isUserLoading || (user && isUserDataLoading)) {
@@ -148,7 +184,22 @@ export default function ProfilePage() {
               <CardDescription>{user.email}</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button variant="outline" className="w-full" disabled>Change Photo</Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/gif"
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                >
+                  {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                  {isUploading ? 'Uploading...' : 'Change Photo'}
+                </Button>
             </CardContent>
           </Card>
         </div>
