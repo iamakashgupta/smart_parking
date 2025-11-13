@@ -65,7 +65,12 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     
     const hours = differenceInHours(endDateTime, startDateTime);
     return Math.max(1, hours) * lot.rates.perHour;
-  }, [startTime, endTime, lot.rates.perHour]);
+  }, [startTime, endTime, lot.rates.perHour, date]);
+  
+  const actualCostNow = useMemo(() => {
+    // For "Book Now", we can assume a 1-hour minimum charge to show a price.
+    return lot.rates.perHour;
+  },[lot.rates.perHour]);
 
   const handleCreateBooking = async (isReservation: boolean) => {
     if (!date || !selectedVehicleId || !firestore || !user) {
@@ -91,7 +96,10 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
 
     try {
         const startDateTime = isReservation ? new Date(`${format(date, 'MM/dd/yyyy')} ${startTime}`) : new Date();
-        const endDateTime = isReservation ? new Date(`${format(date, 'MM/dd/yyyy')} ${endTime}`) : addHours(startDateTime, 2);
+        const endDateTime = isReservation ? new Date(`${format(date, 'MM/dd/yyyy')} ${endTime}`) : addHours(startDateTime, 2); // Default 2 hours for now booking
+        
+        const hours = isReservation ? Math.max(1, differenceInHours(endDateTime, startDateTime)) : 1;
+        const finalCost = hours * lot.rates.perHour;
 
         const bookingData = {
             userId: user.uid,
@@ -100,9 +108,9 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
             slotId: availableSlot.id,
             vehicleReg: selectedVehicle.registrationNumber,
             startTime: Timestamp.fromDate(startDateTime),
-            endTime: Timestamp.fromDate(endDateTime),
+            endTime: Timestamp.fromDate(endDateTime), // This is an estimate for reservations
             status: isReservation ? 'Confirmed' : 'Active',
-            totalCost: isReservation ? estimatedCost : lot.rates.perHour * 2, // Dummy cost for now
+            totalCost: finalCost,
         };
         
         const batch = writeBatch(firestore);
@@ -182,7 +190,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
               </div>
               <div className="text-center p-4 bg-muted rounded-md">
                 <p className="text-sm text-muted-foreground">Estimated Cost</p>
-                <p className="text-2xl font-bold text-primary">₹{lot.rates.perHour.toFixed(2)}<span className="text-base font-normal text-muted-foreground">/hour</span></p>
+                <p className="text-2xl font-bold text-primary">₹{actualCostNow.toFixed(2)}<span className="text-base font-normal text-muted-foreground">/hour</span></p>
                 <p className="text-xs text-muted-foreground mt-1">You will be charged based on duration upon checkout.</p>
               </div>
           </CardContent>

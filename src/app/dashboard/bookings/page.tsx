@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format, differenceInHours } from 'date-fns';
 import { MoreHorizontal, Loader2, X } from 'lucide-react';
@@ -85,6 +85,37 @@ export default function MyBookingsPage() {
     }
   };
 
+  const handleCheckout = async (booking: Booking) => {
+    if (!firestore) return;
+    try {
+      const lotRef = doc(firestore, 'parking_lots', booking.lotId);
+      const bookingRef = doc(firestore, 'bookings', booking.id);
+      const slotRef = doc(firestore, `parking_lots/${booking.lotId}/slots`, booking.slotId);
+
+      const batch = writeBatch(firestore);
+
+      // Mark slot as vacant
+      batch.update(slotRef, { isOccupied: false });
+
+      // Mark booking as completed
+      batch.update(bookingRef, { status: 'Completed', endTime: serverTimestamp() });
+      
+      await batch.commit();
+
+      toast({
+        title: 'Checkout Successful',
+        description: 'Thank you for parking with us!',
+      });
+    } catch (error) {
+      console.error('Checkout failed:', error);
+       toast({
+        variant: 'destructive',
+        title: 'Checkout Failed',
+        description: 'Could not complete your checkout. Please try again.',
+      });
+    }
+  };
+
   const renderContent = () => {
     if (isUserLoading || (user && isLoadingBookings)) {
        return (
@@ -146,6 +177,9 @@ export default function MyBookingsPage() {
                 {booking.status === 'Confirmed' && (
                   <DropdownMenuItem onClick={() => handleCheckIn(booking.id)}>Check-in</DropdownMenuItem>
                 )}
+                {booking.status === 'Active' && (
+                  <DropdownMenuItem onClick={() => handleCheckout(booking)}>Checkout</DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </TableCell>
@@ -166,7 +200,7 @@ export default function MyBookingsPage() {
     if (!selectedBooking) return null;
 
     const startTime = selectedBooking.startTime.toDate();
-    const endTime = selectedBooking.endTime.toDate();
+    const endTime = selectedBooking.endTime ? selectedBooking.endTime.toDate() : new Date();
     const duration = differenceInHours(endTime, startTime);
     const durationText = duration > 0 ? `${duration} hour${duration > 1 ? 's' : ''}` : 'Less than an hour';
 
