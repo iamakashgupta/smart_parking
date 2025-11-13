@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useStorage } from '@/firebase';
 import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
 import { Car, Trash2, PlusCircle, Loader2, Upload } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -47,6 +47,7 @@ type VehicleFormData = z.infer<typeof vehicleSchema>;
 export default function ProfilePage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,13 +123,12 @@ export default function ProfilePage() {
   }
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) return;
+    if (!user || !storage) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
     try {
-      const storage = getStorage();
       const storageRef = ref(storage, `profile-photos/${user.uid}/${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
       const photoURL = await getDownloadURL(snapshot.ref);
