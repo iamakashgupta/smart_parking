@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { PageHeader } from '@/components/dashboard/page-header';
 import {
   Table,
@@ -14,8 +15,8 @@ import { Button } from '@/components/ui/button';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
-import { format } from 'date-fns';
-import { MoreHorizontal, Loader2 } from 'lucide-react';
+import { format, differenceInHours } from 'date-fns';
+import { MoreHorizontal, Loader2, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +24,22 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 export default function MyBookingsPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   const bookingsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Removed orderBy to prevent complex query issues with security rules
     return query(collection(firestore, 'bookings'), where('userId', '==', user.uid));
   }, [firestore, user]);
 
@@ -49,6 +58,10 @@ export default function MyBookingsPage() {
       default:
         return 'secondary';
     }
+  };
+  
+  const handleViewReceipt = (booking: Booking) => {
+    setSelectedBooking(booking);
   };
   
   const renderContent = () => {
@@ -73,7 +86,6 @@ export default function MyBookingsPage() {
     }
     
     if (bookings && bookings.length > 0) {
-      // Sort client-side
       const sortedBookings = [...bookings].sort((a, b) => {
         const timeA = a.startTime?.toMillis() || 0;
         const timeB = b.startTime?.toMillis() || 0;
@@ -109,7 +121,7 @@ export default function MyBookingsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>View Receipt</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleViewReceipt(booking)}>View Receipt</DropdownMenuItem>
                 {booking.status === 'Confirmed' && <DropdownMenuItem>Cancel Booking</DropdownMenuItem>}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -126,6 +138,57 @@ export default function MyBookingsPage() {
         </TableRow>
     );
   };
+  
+  const renderReceiptDialog = () => {
+    if (!selectedBooking) return null;
+
+    const startTime = selectedBooking.startTime.toDate();
+    const endTime = selectedBooking.endTime.toDate();
+    const duration = differenceInHours(endTime, startTime);
+    const durationText = duration > 0 ? `${duration} hour${duration > 1 ? 's' : ''}` : 'Less than an hour';
+
+    return (
+      <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Parking Receipt</DialogTitle>
+            <DialogDescription>
+              A summary of your parking session at {selectedBooking.lotName}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Lot</span>
+              <span className="font-medium">{selectedBooking.lotName}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Date</span>
+              <span className="font-medium">{format(startTime, 'MMM d, yyyy')}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Check-in</span>
+              <span className="font-medium">{format(startTime, 'h:mm a')}</span>
+            </div>
+             <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Status</span>
+              <Badge variant={getStatusVariant(selectedBooking.status)}>{selectedBooking.status}</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Vehicle Reg.</span>
+              <span className="font-medium">{selectedBooking.vehicleReg}</span>
+            </div>
+             <div className="flex justify-between items-center text-lg font-semibold text-primary border-t pt-4 mt-4">
+              <span>Total Cost</span>
+              <span>₹{(selectedBooking.totalCost || 0).toFixed(2)}</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedBooking(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   return (
     <div className="container mx-auto px-0">
@@ -159,6 +222,7 @@ export default function MyBookingsPage() {
           </Table>
         </CardContent>
       </Card>
+      {renderReceiptDialog()}
     </div>
   );
 }
