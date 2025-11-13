@@ -8,7 +8,10 @@ import { Users, ParkingCircle, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, limit, orderBy } from 'firebase/firestore';
 import { ParkingLot, Booking } from '@/lib/types';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay } from 'date-fns';
+import { useMemo } from 'react';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 
 export default function AdminDashboardPage() {
   const firestore = useFirestore();
@@ -37,6 +40,30 @@ export default function AdminDashboardPage() {
   }, { totalOccupancy: 0, totalSlots: 0 }) || { totalOccupancy: 0, totalSlots: 0 };
   
   const occupancyPercentage = totalSlots > 0 ? (totalOccupancy / totalSlots) * 100 : 0;
+
+  const chartData = useMemo(() => {
+    const data = [];
+    const today = startOfDay(new Date());
+
+    for (let i = 6; i >= 0; i--) {
+      const date = subDays(today, i);
+      const formattedDate = format(date, 'MMM d');
+      
+      const dailyRevenue = allBookings
+        ?.filter(b => b.status === 'Completed' && b.startTime && startOfDay(b.startTime.toDate()).getTime() === date.getTime())
+        .reduce((sum, b) => sum + (b.totalCost || 0), 0) || 0;
+
+      data.push({ date: formattedDate, revenue: dailyRevenue });
+    }
+    return data;
+  }, [allBookings]);
+
+  const chartConfig = {
+    revenue: {
+      label: "Revenue",
+      color: "hsl(var(--primary))",
+    },
+  };
   
   const isLoading = isLoadingLots || isLoadingAllBookings || isLoadingActive || isLoadingRecent;
 
@@ -117,10 +144,35 @@ export default function AdminDashboardPage() {
           <Card className="col-span-4 lg:col-span-3">
             <CardHeader>
               <CardTitle>Revenue Analytics</CardTitle>
-              <CardDescription>Chart not implemented yet.</CardDescription>
+              <CardDescription>Last 7 days of revenue from completed bookings.</CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center justify-center h-[300px] text-muted-foreground">
-              Coming soon...
+            <CardContent className="pl-2">
+              <ChartContainer config={chartConfig} className="h-[280px] w-full">
+                <BarChart accessibilityLayer data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: -10 }}>
+                   <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    fontSize={12}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `₹${value}`}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--muted))' }}
+                    content={<ChartTooltipContent
+                      formatter={(value) => `₹${value.toLocaleString()}`}
+                      indicator="dot"
+                    />}
+                  />
+                  <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={4} />
+                </BarChart>
+              </ChartContainer>
             </CardContent>
           </Card>
         </div>
