@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Car, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, addHours, differenceInHours, parse } from 'date-fns';
-import { Timestamp, addDoc, collection, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { Timestamp, addDoc, collection, doc, updateDoc, writeBatch, increment } from 'firebase/firestore';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
@@ -14,12 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import type { ParkingLot, User } from '@/lib/types';
-import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import type { ParkingLot, User, ParkingSlot } from '@/lib/types';
+import { useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookingFormProps {
-  lot: ParkingLot & { slots: any[] };
+  lot: ParkingLot;
   onBookingSuccess: (bookingId: string) => void;
 }
 
@@ -30,6 +30,13 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   
   const userDocRef = useMemoFirebase(() => (firestore && user) ? doc(firestore, 'users', user.uid) : null, [firestore, user]);
   const { data: userData, isLoading: isUserDataLoading } = useDoc<User>(userDocRef);
+
+  // Fetch slots to find an available one
+  const slotsQuery = useMemoFirebase(() => 
+    (firestore && lot.id) ? collection(firestore, `parking_lots/${lot.id}/slots`) : null,
+    [firestore, lot.id]
+  );
+  const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
 
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState<string>('09:00 AM');
@@ -73,14 +80,14 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   },[lot.rates.perHour]);
 
   const handleCreateBooking = async (isReservation: boolean) => {
-    if (!date || !selectedVehicleId || !firestore || !user) {
+    if (!date || !selectedVehicleId || !firestore || !user || !slots) {
         toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a vehicle, date, and time.' });
         return;
     }
 
     setIsSubmitting(true);
 
-    const availableSlot = lot.slots.find(s => !s.isOccupied);
+    const availableSlot = slots.find(s => !s.isOccupied);
     if (!availableSlot) {
         toast({ variant: 'destructive', title: 'No Slots Available', description: 'This parking lot is currently full.' });
         setIsSubmitting(false);
@@ -115,11 +122,18 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
         
         const batch = writeBatch(firestore);
 
+        // 1. Create the booking document
         const bookingRef = doc(collection(firestore, 'bookings'));
         batch.set(bookingRef, { ...bookingData, id: bookingRef.id });
 
+        // 2. Mark the slot as occupied
         const slotDocRef = doc(firestore, `parking_lots/${lot.id}/slots/${availableSlot.id}`);
         batch.update(slotDocRef, { isOccupied: true });
+        
+        // 3. Decrement the availableSlots count on the parent lot
+        const lotDocRef = doc(firestore, 'parking_lots', lot.id);
+        batch.update(lotDocRef, { availableSlots: increment(-1) });
+
 
         await batch.commit();
 
@@ -133,7 +147,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     }
   }
   
-  if (isUserLoading || isUserDataLoading) {
+  if (isUserLoading || isUserDataLoading || isLoadingSlots) {
       return <Card className="shadow-lg flex items-center justify-center h-[500px]"><Loader2 className="h-8 w-8 animate-spin" /></Card>
   }
 

@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { ParkingCircle, Loader2 } from 'lucide-react';
 import { useCollection, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { collection, query, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, doc, updateDoc, writeBatch, increment } from 'firebase/firestore';
 import { ParkingLot, ParkingSlot } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -50,9 +50,20 @@ export default function AdminSimulatorPage() {
   };
 
   const handleStatusChange = async (isOccupied: boolean) => {
-    if (!slotDocRef) return;
+    if (!firestore || !slotDocRef || selectedSlot === null || selectedSlot.isOccupied === isOccupied) return;
+
     try {
-      await updateDoc(slotDocRef, { isOccupied });
+      const batch = writeBatch(firestore);
+      const lotRef = doc(firestore, 'parking_lots', selectedSlot.lotId);
+
+      // Update slot status
+      batch.update(slotDocRef, { isOccupied });
+
+      // Update lot's availableSlots count
+      batch.update(lotRef, { availableSlots: increment(isOccupied ? -1 : 1) });
+      
+      await batch.commit();
+
       toast({
         title: "Sensor Event Sent",
         description: `Slot ${selectedSlotId?.substring(0, 8)}... marked as ${isOccupied ? 'Occupied' : 'Vacant'}.`,

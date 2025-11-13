@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ParkingLot, ParkingSlot, SlotType } from '@/lib/types';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import QRCode from 'react-qr-code';
 
 export default function LotDetailPage() {
@@ -30,23 +30,20 @@ export default function LotDetailPage() {
   const slotsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, `parking_lots/${id}/slots`)) : null, [firestore, id]);
   const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
   
-  const availableSlotsCount = slots?.filter(s => !s.isOccupied).length ?? 0;
-  
-  if (isLoadingLot || isLoadingSlots) {
+  if (isLoadingLot) {
     return <PageSkeleton />;
   }
 
   if (!lot) {
     notFound();
   }
-  
-  const lotWithSlots = { ...lot, availableSlots: availableSlotsCount, slots: slots || [] };
 
   const handleBookingSuccess = (bookingId: string) => {
     setCurrentBookingId(bookingId);
     setShowSuccessDialog(true);
   }
 
+  const availableSlotsCount = lot.availableSlots ?? 0;
   const occupancy = lot.totalSlots > 0 ? ((lot.totalSlots - availableSlotsCount) / lot.totalSlots) * 100 : 0;
 
   const slotTypeIcons: Record<SlotType, React.ReactNode> = {
@@ -57,11 +54,14 @@ export default function LotDetailPage() {
     Disabled: <Accessibility className="h-5 w-5" />,
   };
   
-  const slotTypeData = (Object.keys(slotTypeIcons) as SlotType[]).map(type => {
-      const total = slots?.filter(s => s.type === type).length ?? 0;
-      const available = slots?.filter(s => s.type === type && !s.isOccupied).length ?? 0;
-      return { type, total, available };
-  }).filter(d => d.total > 0);
+  const slotTypeData = useMemo(() => {
+    if (!slots) return [];
+    return (Object.keys(slotTypeIcons) as SlotType[]).map(type => {
+        const total = slots.filter(s => s.type === type).length;
+        const available = slots.filter(s => s.type === type && !s.isOccupied).length;
+        return { type, total, available };
+    }).filter(d => d.total > 0);
+  }, [slots]);
 
 
   return (
@@ -133,10 +133,10 @@ export default function LotDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-500">
-                    {lotWithSlots.slots.filter(s => s.type === 'EV').length > 0 ? 'Available' : 'N/A'}
+                    {lot.slotTypes.includes('EV') ? 'Available' : 'N/A'}
                     </div>
                   <p className="text-xs text-muted-foreground">
-                    {lotWithSlots.slots.filter(s => s.type === 'EV' && !s.isOccupied).length} spots open
+                    {isLoadingSlots ? '...' : slots?.filter(s => s.type === 'EV' && !s.isOccupied).length} spots open
                     </p>
                 </CardContent>
             </Card>
@@ -147,7 +147,7 @@ export default function LotDetailPage() {
               <CardTitle>Live Availability by Slot Type</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {slotTypeData.map(item => (
+                {isLoadingSlots ? <Skeleton className="h-16 w-full col-span-full" /> : slotTypeData.map(item => (
                      <div key={item.type} className="flex items-center space-x-4 p-4 bg-muted rounded-lg">
                         <div className="text-primary">{slotTypeIcons[item.type as SlotType]}</div>
                         <div>
@@ -165,7 +165,7 @@ export default function LotDetailPage() {
 
         <div className="lg:col-span-1">
           <div className="sticky top-20">
-            <BookingForm lot={lotWithSlots} onBookingSuccess={handleBookingSuccess} />
+            <BookingForm lot={lot} onBookingSuccess={handleBookingSuccess} />
           </div>
         </div>
       </div>

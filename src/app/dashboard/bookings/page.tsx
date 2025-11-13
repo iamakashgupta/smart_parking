@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, updateDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, writeBatch, serverTimestamp, increment } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format, differenceInHours } from 'date-fns';
 import { MoreHorizontal, Loader2, X } from 'lucide-react';
@@ -66,11 +66,18 @@ export default function MyBookingsPage() {
     setSelectedBooking(booking);
   };
   
-  const handleCheckIn = async (bookingId: string) => {
+  const handleCheckIn = async (booking: Booking) => {
     if (!firestore) return;
     try {
-      const bookingRef = doc(firestore, 'bookings', bookingId);
-      await updateDoc(bookingRef, { status: 'Active' });
+      const batch = writeBatch(firestore);
+      const bookingRef = doc(firestore, 'bookings', booking.id);
+      const lotRef = doc(firestore, 'parking_lots', booking.lotId);
+      
+      batch.update(bookingRef, { status: 'Active' });
+      batch.update(lotRef, { availableSlots: increment(-1) });
+
+      await batch.commit();
+      
       toast({
         title: 'Check-in Successful',
         description: 'Your booking is now active.',
@@ -99,6 +106,9 @@ export default function MyBookingsPage() {
 
       // Mark booking as completed
       batch.update(bookingRef, { status: 'Completed', endTime: serverTimestamp() });
+      
+      // Increment available slots in the lot
+      batch.update(lotRef, { availableSlots: increment(1) });
       
       await batch.commit();
 
@@ -175,7 +185,7 @@ export default function MyBookingsPage() {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleViewReceipt(booking)}>View Receipt</DropdownMenuItem>
                 {booking.status === 'Confirmed' && (
-                  <DropdownMenuItem onClick={() => handleCheckIn(booking.id)}>Check-in</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleCheckIn(booking)}>Check-in</DropdownMenuItem>
                 )}
                 {booking.status === 'Active' && (
                   <DropdownMenuItem onClick={() => handleCheckout(booking)}>Checkout</DropdownMenuItem>

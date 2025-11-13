@@ -17,20 +17,7 @@ interface LotCardProps {
 }
 
 export function LotCard({ lot }: LotCardProps) {
-  const firestore = useFirestore();
-  
-  const slotsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, `parking_lots/${lot.id}/slots`), where('isOccupied', '==', false))
-  }, [firestore, lot.id]);
-  
-  const { data: availableSlots, isLoading } = useCollection(slotsQuery);
-
-  if (isLoading) {
-    return <CardSkeleton />;
-  }
-
-  const availableCount = availableSlots?.length ?? 0;
+  const availableCount = lot.availableSlots ?? 0;
   const occupancy = lot.totalSlots > 0 ? ((lot.totalSlots - availableCount) / lot.totalSlots) * 100 : 0;
 
   return (
