@@ -1,13 +1,29 @@
+
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MapPin, Search, Calendar, Car } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useInView } from 'react-intersection-observer';
 
 export default function LandingPage() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const { ref: ref1, inView: inView1 } = useInView({ triggerOnce: true, threshold: 0.2 });
+  const { ref: ref2, inView: inView2 } = useInView({ triggerOnce: true, threshold: 0.2 });
+  const { ref: ref3, inView: inView3 } = useInView({ triggerOnce: true, threshold: 0.2 });
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-background/80 backdrop-blur-sm">
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-background/80 backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2">
           <svg
             className="w-8 h-8 text-primary"
@@ -52,7 +68,7 @@ export default function LandingPage() {
       </header>
 
       <main className="flex-1">
-        <section className="relative flex items-center justify-center w-full min-h-[60vh] pt-24 pb-12 md:min-h-[80vh] text-center">
+        <section className="relative flex items-center justify-center w-full min-h-[60vh] pt-24 pb-12 md:min-h-[80vh] text-center overflow-hidden">
           <Image
               src="https://picsum.photos/seed/hero-parking/1920/1080"
               alt="Aerial view of a city with parking lots"
@@ -62,14 +78,20 @@ export default function LandingPage() {
               data-ai-hint="city parking"
             />
           <div className="absolute inset-0 bg-black/60" />
-          <div className="relative z-10 container mx-auto px-4">
+          <div className={cn(
+            "relative z-10 container mx-auto px-4 transition-all duration-1000 ease-out",
+            isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            )}>
             <h1 className="text-4xl font-extrabold tracking-tight text-white md:text-5xl lg:text-6xl">
               Find & Book Your Perfect Parking Spot
             </h1>
             <p className="max-w-3xl mx-auto mt-4 text-lg text-gray-200 md:text-xl">
               Smart, simple, and seamless parking. Real-time availability and easy booking at your fingertips.
             </p>
-            <div className="max-w-2xl mx-auto mt-8">
+            <div className={cn(
+                "max-w-2xl mx-auto mt-8 transition-all duration-1000 delay-300 ease-out",
+                 isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                )}>
                 <div className="flex flex-col gap-4 sm:flex-row sm:bg-white sm:p-2 sm:rounded-lg sm:shadow-lg">
                     <div className="relative flex-grow">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -97,21 +119,30 @@ export default function LandingPage() {
               <p className="mt-4 text-lg text-muted-foreground">Parking made easy in 3 simple steps.</p>
             </div>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-              <div className="flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md">
+              <div ref={ref1} className={cn(
+                "flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-xl",
+                inView1 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+                )}>
                 <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-primary/10 text-primary">
                   <Search className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground">1. Find</h3>
                 <p className="mt-2 text-muted-foreground">Search for parking lots near your destination. View real-time availability and pricing.</p>
               </div>
-              <div className="flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md">
+              <div ref={ref2} className={cn(
+                "flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md transition-all duration-500 delay-200 ease-out hover:-translate-y-2 hover:shadow-xl",
+                 inView2 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+                )}>
                 <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-primary/10 text-primary">
                     <Calendar className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-semibold text-foreground">2. Book</h3>
                 <p className="mt-2 text-muted-foreground">Reserve your spot in advance or book instantly. Get a digital token for seamless entry.</p>
               </div>
-              <div className="flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md">
+              <div ref={ref3} className={cn(
+                "flex flex-col items-center p-6 text-center bg-card rounded-lg shadow-md transition-all duration-500 delay-300 ease-out hover:-translate-y-2 hover:shadow-xl",
+                 inView3 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+                )}>
                  <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-primary/10 text-primary">
                     <Car className="w-8 h-8" />
                 </div>
