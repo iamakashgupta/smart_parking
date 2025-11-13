@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -7,6 +8,7 @@ import {
   BookCopy,
   User,
   Settings,
+  LogIn
 } from 'lucide-react';
 import {
   Sidebar,
@@ -20,6 +22,8 @@ import {
 import { Icons } from '@/components/icons';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/firebase';
+import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,18 +37,30 @@ export function DashboardSidebar() {
   const { user, isLoading } = useUser();
   
   if (isLoading) {
-    return null; // Or a loading skeleton for the sidebar
+    return (
+      <Sidebar>
+        <SidebarHeader>
+           <Skeleton className="h-10 w-full" />
+        </SidebarHeader>
+        <SidebarContent>
+           <div className="flex flex-col gap-2">
+             <Skeleton className="h-10 w-full" />
+             <Skeleton className="h-10 w-full" />
+             <Skeleton className="h-10 w-full" />
+           </div>
+        </SidebarContent>
+      </Sidebar>
+    )
   }
   
-  // Only render the full sidebar if the user is logged in
-  if (!user) {
-    return null;
+  const isActive = (href: string) => {
+    return pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
   }
-  
+
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Icons.logo className="w-8 h-8 text-primary" />
           <span className="text-lg font-semibold text-foreground group-data-[collapsible=icon]:hidden">
             SmartPark
@@ -52,36 +68,64 @@ export function DashboardSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
-                tooltip={{ children: item.label, side: 'right' }}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        {user ? (
+          <SidebarMenu>
+            {menuItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive(item.href)}
+                  tooltip={{ children: item.label, side: 'right' }}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        ) : (
+           <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive('/dashboard/lots')}
+                  tooltip={{ children: 'Find Parking', side: 'right' }}
+                >
+                  <Link href="/dashboard/lots">
+                    <Map />
+                    <span>Find Parking</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <div className="p-4 text-center group-data-[collapsible=true]:hidden">
+                  <p className="text-sm text-muted-foreground mb-4">Log in to manage bookings and your profile.</p>
+                  <Button asChild className="w-full">
+                    <Link href="/auth/login">
+                        <LogIn className="mr-2 h-4 w-4" />
+                        Login
+                    </Link>
+                  </Button>
+              </div>
+           </SidebarMenu>
+        )}
       </SidebarContent>
-      <SidebarFooter className="group-data-[collapsible=icon]:hidden">
-         <Separator className="my-2" />
-        <SidebarMenu>
-           <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={{ children: 'Admin Panel', side: 'right' }}>
-                <Link href="/admin">
-                  <Settings />
-                  <span>Admin Panel</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+      {user && (
+        <SidebarFooter className="group-data-[collapsible=icon]:hidden">
+          <Separator className="my-2" />
+          <SidebarMenu>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip={{ children: 'Admin Panel', side: 'right' }}>
+                  <Link href="/admin">
+                    <Settings />
+                    <span>Admin Panel</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { MapPin, Search, Calendar, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useInView } from 'react-intersection-observer';
+import { Icons } from '@/components/icons';
 
 export default function LandingPage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -25,26 +26,7 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background">
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between p-4 bg-background/80 backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2">
-          <svg
-            className="w-8 h-8 text-primary"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M8 4V6.25C8 7.35457 7.10457 8.25 6 8.25C4.89543 8.25 4 7.35457 4 6.25V4H3C2.44772 4 2 4.44772 2 5V20C2 20.5523 2.44772 21 3 21H21C21.5523 21 22 20.5523 22 20V5C22 4.44772 21.5523 4 21 4H8Z"
-              fill="currentColor"
-              fillOpacity="0.3"
-            />
-            <path
-              d="M7 2C8.65685 2 10 3.34315 10 5V8.25C10 9.90685 8.65685 11.25 7 11.25C5.34315 11.25 4 9.90685 4 8.25V5C4 3.34315 5.34315 2 7 2Z"
-              fill="currentColor"
-            />
-            <path
-              d="M17 2C18.6569 2 20 3.34315 20 5V8.25C20 9.90685 18.6569 11.25 17 11.25C15.3431 11.25 14 9.90685 14 8.25V5C14 3.34315 15.3431 2 17 2Z"
-              fill="currentColor"
-            />
-          </svg>
+          <Icons.logo className="w-8 h-8 text-primary" />
           <span className="text-xl font-bold tracking-tight text-foreground">
             SmartPark
           </span>
@@ -62,7 +44,7 @@ export default function LandingPage() {
         </nav>
         <nav className="md:hidden">
             <Button variant="outline" asChild>
-                <Link href="/auth/login">Menu</Link>
+                <Link href="/dashboard">Menu</Link>
             </Button>
         </nav>
       </header>
@@ -92,16 +74,16 @@ export default function LandingPage() {
                 "max-w-2xl mx-auto mt-8 transition-all duration-1000 delay-300 ease-out",
                  isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
                 )}>
-                <div className="flex flex-col gap-4 sm:flex-row sm:bg-white sm:p-2 sm:rounded-lg sm:shadow-lg">
+                <div className="flex flex-col gap-4 sm:flex-row sm:bg-white/10 sm:backdrop-blur-sm sm:p-2 sm:rounded-lg sm:shadow-lg sm:border sm:border-white/20">
                     <div className="relative flex-grow">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
                         <Input
                         type="text"
                         placeholder="Enter a location, or landmark"
-                        className="w-full h-14 pl-10 bg-white sm:border-none sm:h-12 sm:bg-transparent text-foreground"
+                        className="w-full h-14 pl-10 bg-white/10 text-white placeholder:text-gray-300 sm:border-none sm:h-12 sm:bg-transparent"
                         />
                     </div>
-                    <Button asChild size="lg" className="h-14 sm:h-12 sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+                    <Button asChild size="lg" className="h-14 sm:h-12 sm:w-auto">
                         <Link href="/dashboard/lots">
                             <Search className="mr-2 h-5 w-5" />
                             Find Parking
