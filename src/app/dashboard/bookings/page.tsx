@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { Booking } from '@/lib/types';
 import { format, differenceInHours } from 'date-fns';
 import { MoreHorizontal, Loader2, X } from 'lucide-react';
@@ -32,10 +32,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MyBookingsPage() {
   const { user, isLoading: isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   const bookingsQuery = useMemoFirebase(() => {
@@ -64,6 +66,25 @@ export default function MyBookingsPage() {
     setSelectedBooking(booking);
   };
   
+  const handleCheckIn = async (bookingId: string) => {
+    if (!firestore) return;
+    try {
+      const bookingRef = doc(firestore, 'bookings', bookingId);
+      await updateDoc(bookingRef, { status: 'Active' });
+      toast({
+        title: 'Check-in Successful',
+        description: 'Your booking is now active.',
+      });
+    } catch (error) {
+      console.error('Check-in failed:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Check-in Failed',
+        description: 'Could not update your booking status.',
+      });
+    }
+  };
+
   const renderContent = () => {
     if (isUserLoading || (user && isLoadingBookings)) {
        return (
@@ -122,7 +143,9 @@ export default function MyBookingsPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleViewReceipt(booking)}>View Receipt</DropdownMenuItem>
-                {booking.status === 'Confirmed' && <DropdownMenuItem>Cancel Booking</DropdownMenuItem>}
+                {booking.status === 'Confirmed' && (
+                  <DropdownMenuItem onClick={() => handleCheckIn(booking.id)}>Check-in</DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </TableCell>
