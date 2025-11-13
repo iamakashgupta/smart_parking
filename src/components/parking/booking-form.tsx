@@ -39,8 +39,25 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   const { data: slots, isLoading: isLoadingSlots } = useCollection<ParkingSlot>(slotsQuery);
 
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [startTime, setStartTime] = useState<string>('09:00 AM');
-  const [endTime, setEndTime] = useState<string>('11:00 AM');
+  const [startTime, setStartTime]  = useState<string>(() => {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHour = hours % 12 === 0 ? 12 : hours % 12;
+    const roundedMinutes = minutes < 30 ? '00' : '30';
+    return `${String(displayHour).padStart(2, '0')}:${roundedMinutes} ${period}`;
+  });
+  const [endTime, setEndTime] = useState<string>(() => {
+      const start = parse(startTime, 'hh:mm a', new Date());
+      const end = addHours(start, 2);
+      const hours = end.getHours();
+      const minutes = end.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHour = hours % 12 === 0 ? 12 : hours % 12;
+      return `${String(displayHour).padStart(2, '0')}:${minutes < 30 ? '00' : '30'} ${period}`;
+  });
+
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -75,13 +92,17 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
   }, [startTime, endTime, lot.rates.perHour, date]);
   
   const actualCostNow = useMemo(() => {
-    // For "Book Now", we can assume a 1-hour minimum charge to show a price.
     return lot.rates.perHour;
   },[lot.rates.perHour]);
 
   const handleCreateBooking = async (isReservation: boolean) => {
-    if (!date || !selectedVehicleId || !firestore || !user || !slots) {
-        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a vehicle, date, and time.' });
+    if (!selectedVehicleId || !firestore || !user || !slots) {
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a vehicle.' });
+        return;
+    }
+
+    if(isReservation && (!date || !startTime || !endTime)) {
+        toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a date and time for your reservation.' });
         return;
     }
 
@@ -102,8 +123,8 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
     }
 
     try {
-        const startDateTime = isReservation ? new Date(`${format(date, 'MM/dd/yyyy')} ${startTime}`) : new Date();
-        const endDateTime = isReservation ? new Date(`${format(date, 'MM/dd/yyyy')} ${endTime}`) : addHours(startDateTime, 2); // Default 2 hours for now booking
+        const startDateTime = isReservation ? new Date(`${format(date!, 'MM/dd/yyyy')} ${startTime}`) : new Date();
+        const endDateTime = isReservation ? new Date(`${format(date!, 'MM/dd/yyyy')} ${endTime}`) : addHours(startDateTime, 2); // Default 2 hours for now booking
         
         const hours = isReservation ? Math.max(1, differenceInHours(endDateTime, startDateTime)) : 1;
         const finalCost = hours * lot.rates.perHour;
@@ -122,17 +143,14 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
         
         const batch = writeBatch(firestore);
 
-        // 1. Create the booking document
         const bookingRef = doc(collection(firestore, 'bookings'));
         batch.set(bookingRef, { ...bookingData, id: bookingRef.id });
 
-        // 2. Mark the slot as occupied
         const slotDocRef = doc(firestore, `parking_lots/${lot.id}/slots/${availableSlot.id}`);
         batch.update(slotDocRef, { isOccupied: true });
         
-        // 3. Decrement the availableSlots count on the parent lot
         const lotDocRef = doc(firestore, 'parking_lots', lot.id);
-        batch.update(lotDocRef, { availableSlots: increment(-1) });
+        batch.update(lotDocRef, { availableSlots: increment(isReservation ? 0 : -1) });
 
 
         await batch.commit();
@@ -209,7 +227,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
               </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handleCreateBooking(false)} disabled={isSubmitting || !selectedVehicleId}>
+            <Button className="w-full" onClick={() => handleCreateBooking(false)} disabled={isSubmitting || !selectedVehicleId}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Confirm & Get QR Code
             </Button>
@@ -290,7 +308,7 @@ export function BookingForm({ lot, onBookingSuccess }: BookingFormProps) {
               </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => handleCreateBooking(true)} disabled={isSubmitting || !selectedVehicleId || estimatedCost <= 0}>
+            <Button className="w-full" onClick={() => handleCreateBooking(true)} disabled={isSubmitting || !selectedVehicleId || estimatedCost <= 0}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Reserve Spot
             </Button>

@@ -71,16 +71,18 @@ export default function MyBookingsPage() {
     try {
       const batch = writeBatch(firestore);
       const bookingRef = doc(firestore, 'bookings', booking.id);
-      const lotRef = doc(firestore, 'parking_lots', booking.lotId);
       
       batch.update(bookingRef, { status: 'Active' });
-      batch.update(lotRef, { availableSlots: increment(-1) });
+
+      // No need to update lotRef directly, this is handled by slot status change now
+      // This logic will be triggered by the IoT simulator or a real sensor
+      // For now, the booking status update is sufficient for the UI flow
 
       await batch.commit();
       
       toast({
         title: 'Check-in Successful',
-        description: 'Your booking is now active.',
+        description: 'Your booking is now active. The parking sensor will detect your arrival.',
       });
     } catch (error) {
       console.error('Check-in failed:', error);

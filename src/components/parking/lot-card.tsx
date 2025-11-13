@@ -7,9 +7,6 @@ import { Button } from '@/components/ui/button';
 import type { ParkingLot } from '@/lib/types';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface LotCardProps {

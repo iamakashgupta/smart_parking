@@ -80,7 +80,7 @@ export default function LandingPage() {
                         <Input
                         type="text"
                         placeholder="Enter a location, or landmark"
-                        className="w-full h-14 pl-10 bg-white/10 text-white placeholder:text-gray-300 sm:border-none sm:h-12 sm:bg-transparent"
+                        className="w-full h-14 pl-10 bg-transparent text-white placeholder:text-gray-300 border-white/20 sm:border-none sm:h-12"
                         />
                     </div>
                     <Button asChild size="lg" className="h-14 sm:h-12 sm:w-auto">

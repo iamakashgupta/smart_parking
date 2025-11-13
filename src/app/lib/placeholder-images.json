@@ -1,0 +1,46 @@
+{
+  "placeholderImages": [
+    {
+      "id": "hero-landing",
+      "description": "Aerial view of a city with parking lots",
+      "imageUrl": "https://images.unsplash.com/photo-1704823825929-2a9208d446b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxjaXR5JTIwcGFya2luZ3xlbnwwfHx8fDE3NjI5NTMzNzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "city parking"
+    },
+    {
+      "id": "map-placeholder",
+      "description": "A stylized map of a city showing streets and locations",
+      "imageUrl": "https://images.unsplash.com/photo-1717343823307-973d0903d222?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjaXR5JTIwbWFwfGVufDB8fHx8MTc2MjkyNjg0M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "city map"
+    },
+    {
+      "id": "lot-1",
+      "description": "Interior of a modern, well-lit multi-level parking garage",
+      "imageUrl": "https://images.unsplash.com/photo-1622836270623-0a8072ed6eec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwYXJraW5nJTIwZ2FyYWdlfGVufDB8fHx8MTc2MjkzOTQ3M3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "parking garage"
+    },
+    {
+      "id": "lot-2",
+      "description": "An outdoor parking lot with cars neatly parked under the sun",
+      "imageUrl": "https://images.unsplash.com/photo-1611774079598-bd14582ef874?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8b3V0ZG9vciUyMHBhcmtpbmd8ZW58MHx8fHwxNzYyODczNjAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "outdoor parking"
+    },
+    {
+      "id": "lot-3",
+      "description": "Underground parking garage with concrete pillars",
+      "imageUrl": "https://images.unsplash.com/photo-1545179605-1296651e9d43?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx1bmRlcmdyb3VuZCUyMHBhcmtpbmd8ZW58MHx8fHwxNzYyODczNjAxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "underground parking"
+    },
+    {
+      "id": "user-avatar-1",
+      "description": "Portrait of a smiling person",
+      "imageUrl": "https://images.unsplash.com/photo-1600180758890-6b94519a8ba6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NjI5MzU5MTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "user-avatar-2",
+      "description": "Portrait of a person outdoors",
+      "imageUrl": "https://images.unsplash.com/photo-1531123414780-f74242c2b052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGVyc29uJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzYyOTM1OTE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    }
+  ]
+}
